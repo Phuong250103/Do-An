@@ -79,6 +79,31 @@ export const addProductFormElements = [
     ],
   },
   {
+    label: "Size",
+    name: "size",
+    componentType: "select",
+    options: [
+      { id: "l", label: "L" },
+      { id: "m", label: "M" },
+      { id: "xl", label: "XL" },
+      { id: "xx", label: "XX" },
+      { id: "s", label: "S" },
+    ],
+  },
+  {
+    label: "Color",
+    name: "color",
+    componentType: "select",
+    options: [
+      { id: "red", label: "Red" },
+      { id: "orange", label: "Orange" },
+      { id: "purple", label: "Purple" },
+      { id: "blue", label: "Blue" },
+      { id: "green", label: "Green" },
+      { id: "white", label: "white" },
+    ],
+  },
+  {
     label: "Price",
     name: "price",
     componentType: "input",
@@ -110,4 +135,12 @@ export const addProductFormElements = [
       { id: "winter", label: "Winter" },
     ],
   },
+];
+export const shoppingViewHeaderMenuItems = [
+  { id: "home", label: "Home", path: "/shop/home" },
+  { id: "man", label: "Man", path: "/shop/listing" },
+  { id: "women", label: "Women", path: "/shop/listing" },
+  { id: "kids", label: "Kids", path: "/shop/listing" },
+  { id: "footwear", label: "Footwear", path: "/shop/listing" },
+  { id: "accessories", label: "Accessories", path: "/shop/listing" },
 ];
