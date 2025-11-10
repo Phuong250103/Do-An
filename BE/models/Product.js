@@ -18,6 +18,9 @@ const ProductSchema = new mongoose.Schema(
       enum: ["spring", "summer", "autumn", "winter"],
       required: true,
     },
+    seasonEndDate: { type: Date },
+    discountAfterSeason: { type: Number, default: 70 },
+    isSeasonalDiscountApplied: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

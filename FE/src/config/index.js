@@ -135,6 +135,13 @@ export const addProductFormElements = [
       { id: "winter", label: "Winter" },
     ],
   },
+  {
+    label: "Discount After Season (%)",
+    name: "discountAfterSeason",
+    componentType: "input",
+    type: "number",
+    placeholder: "Enter discount percentage (default: 70)",
+  },
 ];
 export const shoppingViewHeaderMenuItems = [
   { id: "home", label: "Home", path: "/shop/home" },

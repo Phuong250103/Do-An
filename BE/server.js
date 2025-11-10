@@ -5,6 +5,8 @@ const cors = require("cors");
 const authRoutes = require("./routes/auth/auth-routes");
 const adminProductRoutes = require("./routes/admin/products-routes");
 const shopProductRoutes = require("./routes/shop/products-routes");
+const cron = require("node-cron");
+const Product = require("./models/Product");
 
 mongoose
   .connect(
@@ -32,6 +34,66 @@ app.use(
     credentials: true,
   })
 );
+// Khởi động cron job ở đây
+cron.schedule("0 0 * * *", async () => {
+  const today = new Date();
+
+  try {
+    // Tìm tất cả sản phẩm có mùa đã hết
+    const productsWithExpiredSeason = await Product.find({
+      seasonEndDate: { $lte: today },
+      isSeasonalDiscountApplied: false,
+    });
+
+    // Áp dụng giảm giá cho các sản phẩm mùa đã hết nhưng chưa được áp dụng
+    for (const p of productsWithExpiredSeason) {
+      if (p.discountAfterSeason > 0) {
+        const calculatedSalePrice = Math.round(
+          p.price * (1 - p.discountAfterSeason / 100)
+        );
+        p.salePrice = calculatedSalePrice;
+        p.isSeasonalDiscountApplied = true;
+        await p.save();
+      }
+    }
+
+    // Tìm các sản phẩm có mùa chưa hết nhưng đang có isSeasonalDiscountApplied = true
+    // (có thể do admin vừa chỉnh sửa chuyển từ mùa cũ sang mùa mới)
+    const productsWithActiveSeason = await Product.find({
+      seasonEndDate: { $gt: today },
+      isSeasonalDiscountApplied: true,
+    });
+
+    for (const p of productsWithActiveSeason) {
+      // Khi chuyển sang mùa mới chưa hết, chỉ cần reset flag
+      // Giữ nguyên salePrice vì có thể là giá admin đã set hoặc muốn giữ
+      // Mùa mới chưa hết nên không áp dụng giảm giá tự động, nhưng salePrice vẫn có thể được dùng
+      p.isSeasonalDiscountApplied = false;
+      await p.save();
+    }
+
+    // Đảm bảo giá đúng cho các sản phẩm mùa đã hết
+    // (kiểm tra lại các sản phẩm đã có isSeasonalDiscountApplied = true nhưng giá có thể không đúng)
+    const productsWithExpiredSeasonButWrongPrice = await Product.find({
+      seasonEndDate: { $lte: today },
+      isSeasonalDiscountApplied: true,
+    });
+
+    for (const p of productsWithExpiredSeasonButWrongPrice) {
+      const expectedSalePrice = Math.round(
+        p.price * (1 - p.discountAfterSeason / 100)
+      );
+      
+      // Nếu giá hiện tại không đúng với giá nên có, cập nhật lại
+      if (p.salePrice !== expectedSalePrice) {
+        p.salePrice = expectedSalePrice;
+        await p.save();
+      }
+    }
+  } catch (error) {
+    console.error("❌ Lỗi trong cron job:", error);
+  }
+});
 
 app.use(cookieParser());
 app.use(express.json());

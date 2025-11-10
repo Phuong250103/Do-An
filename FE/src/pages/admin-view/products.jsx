@@ -31,6 +31,7 @@ const initialFormData = {
   totalStock: "",
   averageReview: 0,
   season: "",
+  discountAfterSeason: "",
 };
 
 function AdminProducts() {
@@ -96,7 +97,7 @@ function AdminProducts() {
 
   function isFormValid() {
     return Object.keys(formData)
-      .filter((currentKey) => currentKey !== "averageReview")
+      .filter((currentKey) => currentKey !== "averageReview" && currentKey !== "discountAfterSeason")
       .map((key) => formData[key] !== "")
       .every((item) => item);
   }
