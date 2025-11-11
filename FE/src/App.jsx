@@ -7,6 +7,7 @@ import AdminDashboard from "./pages/admin-view/dashboard.jsx";
 import AdminProducts from "./pages/admin-view/products.jsx";
 import AdminOrders from "./pages/admin-view/orders.jsx";
 import AdminFeatures from "./pages/admin-view/features.jsx";
+import AdminOptions from "./pages/admin-view/options.jsx";
 import NotFound from "./pages/not-found/index.jsx";
 import ShoppingLayout from "./components/shopping-view/layout.jsx";
 import ShoppingHome from "./pages/shopping-view/home.jsx";
@@ -60,6 +61,7 @@ function App() {
           <Route path="products" element={<AdminProducts />} />
           <Route path="orders" element={<AdminOrders />} />
           <Route path="features" element={<AdminFeatures />} />
+          <Route path="options" element={<AdminOptions />} />
         </Route>
         <Route
           path="/shop"

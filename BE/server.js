@@ -5,6 +5,7 @@ const cors = require("cors");
 const authRoutes = require("./routes/auth/auth-routes");
 const adminProductRoutes = require("./routes/admin/products-routes");
 const shopProductRoutes = require("./routes/shop/products-routes");
+const adminOptionsRoutes = require("./routes/admin/options-routes");
 const cron = require("node-cron");
 const Product = require("./models/Product");
 
@@ -37,23 +38,34 @@ app.use(
 // Khởi động cron job ở đây
 cron.schedule("0 0 * * *", async () => {
   const today = new Date();
+  // So sánh ngày (không tính giờ phút giây) để chính xác
+  const todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
 
   try {
-    // Tìm tất cả sản phẩm có mùa đã hết
-    const productsWithExpiredSeason = await Product.find({
-      seasonEndDate: { $lte: today },
+    // Tìm tất cả sản phẩm có mùa đã hết (phải qua ngày endseason)
+    const allProducts = await Product.find({
+      seasonEndDate: { $exists: true },
       isSeasonalDiscountApplied: false,
     });
 
-    // Áp dụng giảm giá cho các sản phẩm mùa đã hết nhưng chưa được áp dụng
-    for (const p of productsWithExpiredSeason) {
-      if (p.discountAfterSeason > 0) {
-        const calculatedSalePrice = Math.round(
-          p.price * (1 - p.discountAfterSeason / 100)
+    // Áp dụng giảm giá cho các sản phẩm mùa đã hết (phải qua ngày endseason) nhưng chưa được áp dụng
+    for (const p of allProducts) {
+      if (p.seasonEndDate && p.discountAfterSeason > 0) {
+        const seasonEndDateOnly = new Date(
+          new Date(p.seasonEndDate).getFullYear(),
+          new Date(p.seasonEndDate).getMonth(),
+          new Date(p.seasonEndDate).getDate()
         );
-        p.salePrice = calculatedSalePrice;
-        p.isSeasonalDiscountApplied = true;
-        await p.save();
+        
+        // Chỉ áp dụng khi đã qua ngày endseason (không áp dụng trong ngày endseason)
+        if (todayDate > seasonEndDateOnly) {
+          const calculatedSalePrice = Math.round(
+            p.price * (1 - p.discountAfterSeason / 100)
+          );
+          p.salePrice = calculatedSalePrice;
+          p.isSeasonalDiscountApplied = true;
+          await p.save();
+        }
       }
     }
 
@@ -72,22 +84,33 @@ cron.schedule("0 0 * * *", async () => {
       await p.save();
     }
 
-    // Đảm bảo giá đúng cho các sản phẩm mùa đã hết
+    // Đảm bảo giá đúng cho các sản phẩm mùa đã hết (phải qua ngày endseason)
     // (kiểm tra lại các sản phẩm đã có isSeasonalDiscountApplied = true nhưng giá có thể không đúng)
     const productsWithExpiredSeasonButWrongPrice = await Product.find({
-      seasonEndDate: { $lte: today },
+      seasonEndDate: { $exists: true },
       isSeasonalDiscountApplied: true,
     });
 
     for (const p of productsWithExpiredSeasonButWrongPrice) {
-      const expectedSalePrice = Math.round(
-        p.price * (1 - p.discountAfterSeason / 100)
-      );
-      
-      // Nếu giá hiện tại không đúng với giá nên có, cập nhật lại
-      if (p.salePrice !== expectedSalePrice) {
-        p.salePrice = expectedSalePrice;
-        await p.save();
+      if (p.seasonEndDate) {
+        const seasonEndDateOnly = new Date(
+          new Date(p.seasonEndDate).getFullYear(),
+          new Date(p.seasonEndDate).getMonth(),
+          new Date(p.seasonEndDate).getDate()
+        );
+        
+        // Chỉ kiểm tra và sửa giá khi đã qua ngày endseason
+        if (todayDate > seasonEndDateOnly) {
+          const expectedSalePrice = Math.round(
+            p.price * (1 - p.discountAfterSeason / 100)
+          );
+          
+          // Nếu giá hiện tại không đúng với giá nên có, cập nhật lại
+          if (p.salePrice !== expectedSalePrice) {
+            p.salePrice = expectedSalePrice;
+            await p.save();
+          }
+        }
       }
     }
   } catch (error) {
@@ -99,6 +122,7 @@ app.use(cookieParser());
 app.use(express.json());
 app.use("/api/auth", authRoutes);
 app.use("/api/admin/products", adminProductRoutes);
+app.use("/api/admin/options", adminOptionsRoutes);
 app.use("/api/shop/products", shopProductRoutes);
 
 app.listen(PORT, () => {
