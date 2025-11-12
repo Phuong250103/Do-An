@@ -29,14 +29,12 @@ const addProduct = async (req, res) => {
       description,
       category,
       brand,
-      size,
-      color,
       price,
       salePrice,
-      totalStock,
       averageReview,
       season,
       discountAfterSeason,
+      variants, // Mảng các biến thể: [{color, size, quantity}, ...]
     } = req.body;
 
     const now = new Date();
@@ -90,17 +88,23 @@ const addProduct = async (req, res) => {
       finalSalePrice = salePrice || 0;
     }
 
+    // Validate variants
+    if (!variants || !Array.isArray(variants) || variants.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Vui lòng thêm ít nhất một biến thể (màu, kích thước, số lượng)",
+      });
+    }
+
     const newlyCreatedProduct = new Product({
       image,
       title,
       description,
       category,
       brand,
-      size,
-      color,
+      variants: variants,
       price,
       salePrice: finalSalePrice, // Lưu giá đã tính toán
-      totalStock,
       averageReview,
       season,
       seasonEndDate,
@@ -218,14 +222,12 @@ const editProduct = async (req, res) => {
       description,
       category,
       brand,
-      size,
-      color,
       price,
       salePrice,
-      totalStock,
       averageReview,
       season,
       discountAfterSeason,
+      variants, // Mảng các biến thể: [{color, size, quantity}, ...]
     } = req.body;
 
     let findProduct = await Product.findById(id);
@@ -267,12 +269,20 @@ const editProduct = async (req, res) => {
     findProduct.description = description || findProduct.description;
     findProduct.category = category || findProduct.category;
     findProduct.brand = brand || findProduct.brand;
-    findProduct.size = size || findProduct.size;
-    findProduct.color = color || findProduct.color;
     findProduct.price = price === "" ? 0 : price || findProduct.price;
-    findProduct.totalStock = totalStock || findProduct.totalStock;
     findProduct.image = image || findProduct.image;
     findProduct.averageReview = averageReview || findProduct.averageReview;
+    
+    // Cập nhật variants
+    if (variants && Array.isArray(variants) && variants.length > 0) {
+      findProduct.variants = variants;
+    } else if (variants !== undefined) {
+      // Nếu variants là mảng rỗng, không cho phép
+      return res.status(400).json({
+        success: false,
+        message: "Vui lòng thêm ít nhất một biến thể (màu, kích thước, số lượng)",
+      });
+    }
     if (discountAfterSeason !== undefined) {
       findProduct.discountAfterSeason = discountAfterSeason;
     }

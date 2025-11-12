@@ -7,6 +7,7 @@ function AdminProductTile({
   setOpenCreateProductsDialog,
   setCurrentEditedId,
   handleDelete,
+  setVariants,
 }) {
   return (
     <Card className="w-full max-w-sm mx-auto">
@@ -40,7 +41,14 @@ function AdminProductTile({
             onClick={() => {
               setOpenCreateProductsDialog(true);
               setCurrentEditedId(product?._id);
-              setFormData(product);
+              const { size, color, totalStock, ...productData } = product;
+              setFormData(productData);
+              // Load variants nếu có
+              if (product?.variants && product.variants.length > 0) {
+                setVariants(product.variants);
+              } else {
+                setVariants([]);
+              }
             }}
           >
             Edit

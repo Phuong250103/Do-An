@@ -79,31 +79,6 @@ export const addProductFormElements = [
     ],
   },
   {
-    label: "Size",
-    name: "size",
-    componentType: "select",
-    options: [
-      { id: "l", label: "L" },
-      { id: "m", label: "M" },
-      { id: "xl", label: "XL" },
-      { id: "xx", label: "XX" },
-      { id: "s", label: "S" },
-    ],
-  },
-  {
-    label: "Color",
-    name: "color",
-    componentType: "select",
-    options: [
-      { id: "red", label: "Red" },
-      { id: "orange", label: "Orange" },
-      { id: "purple", label: "Purple" },
-      { id: "blue", label: "Blue" },
-      { id: "green", label: "Green" },
-      { id: "white", label: "white" },
-    ],
-  },
-  {
     label: "Price",
     name: "price",
     componentType: "input",
@@ -116,13 +91,6 @@ export const addProductFormElements = [
     componentType: "input",
     type: "number",
     placeholder: "Enter sale price (optional)",
-  },
-  {
-    label: "Total Stock",
-    name: "totalStock",
-    componentType: "input",
-    type: "number",
-    placeholder: "Enter total stock",
   },
   {
     label: "Season",

@@ -7,9 +7,19 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import CommonForm from "@/components/common/form";
 import { addProductFormElements } from "@/config";
 import ProductImageUpload from "@/components/admin-view/image-upload";
+import ProductVariants from "@/components/admin-view/product-variants";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useDispatch, useSelector } from "react-redux";
 import {
   addNewProduct,
@@ -27,11 +37,8 @@ const initialFormData = {
   description: "",
   category: "",
   brand: "",
-  size: "",
-  color: "",
   price: "",
   salePrice: "",
-  totalStock: "",
   averageReview: 0,
   season: "",
   discountAfterSeason: "",
@@ -46,6 +53,7 @@ function AdminProducts() {
   const [uploadedImageUrl, setUploadedImageUrl] = useState("");
   const [imageLoadingState, setImageLoadingState] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [variants, setVariants] = useState([]);
   const { productList } = useSelector((state) => state.adminProducts);
   const { categories, brands, sizes, colors } = useSelector(
     (state) => state.adminOptions
@@ -65,7 +73,10 @@ function AdminProducts() {
       ? dispatch(
           editProduct({
             id: currentEditedId,
-            formData,
+            formData: {
+              ...formData,
+              variants: variants,
+            },
           })
         ).then((data) => {
           console.log(data, "edit");
@@ -73,6 +84,7 @@ function AdminProducts() {
           if (data?.payload?.success) {
             dispatch(fetchAllProducts());
             setFormData(initialFormData);
+            setVariants([]);
             setOpenCreateProductsDialog(false);
             setCurrentEditedId(null);
           }
@@ -81,6 +93,7 @@ function AdminProducts() {
           addNewProduct({
             ...formData,
             image: uploadedImageUrl,
+            variants: variants,
           })
         ).then((data) => {
           if (data?.payload?.success) {
@@ -88,6 +101,7 @@ function AdminProducts() {
             setOpenCreateProductsDialog(false);
             setImageFile(null);
             setFormData(initialFormData);
+            setVariants([]);
             toast({
               title: "Product add successfully",
             });
@@ -109,10 +123,17 @@ function AdminProducts() {
   }
 
   function isFormValid() {
-    return Object.keys(formData)
-      .filter((currentKey) => currentKey !== "averageReview" && currentKey !== "discountAfterSeason")
+    // Kiểm tra các trường bắt buộc
+    const requiredFields = ["title", "description", "category", "brand", "price", "season"];
+    const isFormFieldsValid = requiredFields
       .map((key) => formData[key] !== "")
       .every((item) => item);
+    
+    // Kiểm tra variants phải có ít nhất 1 biến thể hợp lệ
+    const hasValidVariants = variants && variants.length > 0 && 
+      variants.some(v => v.color && v.size && v.quantity > 0);
+    
+    return isFormFieldsValid && hasValidVariants;
   }
 
   useEffect(() => {
@@ -124,48 +145,58 @@ function AdminProducts() {
     dispatch(fetchOptions("color"));
   }, [dispatch]);
 
-  // Create dynamic form elements with options from API
-  const dynamicFormElements = useMemo(() => {
-    return addProductFormElements.map((element) => {
-      if (element.name === "category" && categories.length > 0) {
-        return {
-          ...element,
-          options: categories.map((cat) => ({
-            id: cat.name,
-            label: cat.label,
-          })),
-        };
-      }
-      if (element.name === "brand" && brands.length > 0) {
-        return {
-          ...element,
-          options: brands.map((brand) => ({
-            id: brand.name,
-            label: brand.label,
-          })),
-        };
-      }
-      if (element.name === "size" && sizes.length > 0) {
-        return {
-          ...element,
-          options: sizes.map((size) => ({
-            id: size.name,
-            label: size.label,
-          })),
-        };
-      }
-      if (element.name === "color" && colors.length > 0) {
-        return {
-          ...element,
-          options: colors.map((color) => ({
-            id: color.name,
-            label: color.label,
-          })),
-        };
-      }
-      return element;
-    });
-  }, [categories, brands, sizes, colors]);
+  // Tách form elements thành 2 phần: trước Price và từ Price trở đi
+  const formElementsBeforePrice = useMemo(() => {
+    return addProductFormElements
+      .filter((element) => element.name !== "price" && element.name !== "salePrice" && element.name !== "season" && element.name !== "discountAfterSeason")
+      .map((element) => {
+        if (element.name === "category" && categories.length > 0) {
+          return {
+            ...element,
+            options: categories.map((cat) => ({
+              id: cat.name,
+              label: cat.label,
+            })),
+          };
+        }
+        if (element.name === "brand" && brands.length > 0) {
+          return {
+            ...element,
+            options: brands.map((brand) => ({
+              id: brand.name,
+              label: brand.label,
+            })),
+          };
+        }
+        return element;
+      });
+  }, [categories, brands]);
+
+  const formElementsFromPrice = useMemo(() => {
+    return addProductFormElements
+      .filter((element) => element.name === "price" || element.name === "salePrice" || element.name === "season" || element.name === "discountAfterSeason")
+      .map((element) => {
+        if (element.name === "category" && categories.length > 0) {
+          return {
+            ...element,
+            options: categories.map((cat) => ({
+              id: cat.name,
+              label: cat.label,
+            })),
+          };
+        }
+        if (element.name === "brand" && brands.length > 0) {
+          return {
+            ...element,
+            options: brands.map((brand) => ({
+              id: brand.name,
+              label: brand.label,
+            })),
+          };
+        }
+        return element;
+      });
+  }, [categories, brands]);
 
   // Reset về trang 1 khi productList thay đổi
   useEffect(() => {
@@ -191,6 +222,7 @@ function AdminProducts() {
                 setCurrentEditedId={setCurrentEditedId}
                 product={productItem}
                 handleDelete={handleDelete}
+                setVariants={setVariants}
               />
             ))
           : null}
@@ -231,6 +263,7 @@ function AdminProducts() {
           setOpenCreateProductsDialog(false);
           setCurrentEditedId(null);
           setFormData(initialFormData);
+          setVariants([]);
         }}
       >
         <SheetContent side="right" className="overflow-auto">
@@ -249,14 +282,205 @@ function AdminProducts() {
             isEditMode={currentEditedId !== null}
           />
           <div className="py-6">
-            <CommonForm
-              onSubmit={onSubmit}
-              formData={formData}
-              setFormData={setFormData}
-              buttonText={currentEditedId !== null ? "Edit" : "Add"}
-              formControls={dynamicFormElements}
-              isBtnDisabled={!isFormValid()}
-            />
+            <form onSubmit={onSubmit}>
+              <div className="flex flex-col gap-3">
+                {formElementsBeforePrice.map((controlItem) => {
+                  const value = formData[controlItem.name] || "";
+                  let element = null;
+
+                  switch (controlItem.componentType) {
+                    case "input":
+                      element = (
+                        <Input
+                          name={controlItem.name}
+                          placeholder={controlItem.placeholder}
+                          id={controlItem.name}
+                          type={controlItem.type}
+                          value={value}
+                          onChange={(event) =>
+                            setFormData({
+                              ...formData,
+                              [controlItem.name]: event.target.value,
+                            })
+                          }
+                        />
+                      );
+                      break;
+                    case "select":
+                      element = (
+                        <Select
+                          onValueChange={(value) =>
+                            setFormData({
+                              ...formData,
+                              [controlItem.name]: value,
+                            })
+                          }
+                          value={value}
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder={controlItem.label} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {controlItem.options && controlItem.options.length > 0
+                              ? controlItem.options.map((optionItem) => (
+                                  <SelectItem key={optionItem.id} value={optionItem.id}>
+                                    {optionItem.label}
+                                  </SelectItem>
+                                ))
+                              : null}
+                          </SelectContent>
+                        </Select>
+                      );
+                      break;
+                    case "textarea":
+                      element = (
+                        <Textarea
+                          name={controlItem.name}
+                          placeholder={controlItem.placeholder}
+                          id={controlItem.name}
+                          value={value}
+                          onChange={(event) =>
+                            setFormData({
+                              ...formData,
+                              [controlItem.name]: event.target.value,
+                            })
+                          }
+                        />
+                      );
+                      break;
+                    default:
+                      element = (
+                        <Input
+                          name={controlItem.name}
+                          placeholder={controlItem.placeholder}
+                          id={controlItem.name}
+                          type={controlItem.type}
+                          value={value}
+                          onChange={(event) =>
+                            setFormData({
+                              ...formData,
+                              [controlItem.name]: event.target.value,
+                            })
+                          }
+                        />
+                      );
+                  }
+
+                  return (
+                    <div className="grid w-full gap-1.5" key={controlItem.name}>
+                      <Label className="mb-1">{controlItem.label}</Label>
+                      {element}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Phần Variants */}
+              <div className="mt-6 pt-6 border-t">
+                <ProductVariants
+                  variants={variants}
+                  setVariants={setVariants}
+                  sizes={sizes}
+                  colors={colors}
+                />
+              </div>
+
+              <div className="mt-6 flex flex-col gap-3">
+                {formElementsFromPrice.map((controlItem) => {
+                  const value = formData[controlItem.name] || "";
+                  let element = null;
+
+                  switch (controlItem.componentType) {
+                    case "input":
+                      element = (
+                        <Input
+                          name={controlItem.name}
+                          placeholder={controlItem.placeholder}
+                          id={controlItem.name}
+                          type={controlItem.type}
+                          value={value}
+                          onChange={(event) =>
+                            setFormData({
+                              ...formData,
+                              [controlItem.name]: event.target.value,
+                            })
+                          }
+                        />
+                      );
+                      break;
+                    case "select":
+                      element = (
+                        <Select
+                          onValueChange={(value) =>
+                            setFormData({
+                              ...formData,
+                              [controlItem.name]: value,
+                            })
+                          }
+                          value={value}
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder={controlItem.label} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {controlItem.options && controlItem.options.length > 0
+                              ? controlItem.options.map((optionItem) => (
+                                  <SelectItem key={optionItem.id} value={optionItem.id}>
+                                    {optionItem.label}
+                                  </SelectItem>
+                                ))
+                              : null}
+                          </SelectContent>
+                        </Select>
+                      );
+                      break;
+                    case "textarea":
+                      element = (
+                        <Textarea
+                          name={controlItem.name}
+                          placeholder={controlItem.placeholder}
+                          id={controlItem.name}
+                          value={value}
+                          onChange={(event) =>
+                            setFormData({
+                              ...formData,
+                              [controlItem.name]: event.target.value,
+                            })
+                          }
+                        />
+                      );
+                      break;
+                    default:
+                      element = (
+                        <Input
+                          name={controlItem.name}
+                          placeholder={controlItem.placeholder}
+                          id={controlItem.name}
+                          type={controlItem.type}
+                          value={value}
+                          onChange={(event) =>
+                            setFormData({
+                              ...formData,
+                              [controlItem.name]: event.target.value,
+                            })
+                          }
+                        />
+                      );
+                  }
+
+                  return (
+                    <div className="grid w-full gap-1.5" key={controlItem.name}>
+                      <Label className="mb-1">{controlItem.label}</Label>
+                      {element}
+                    </div>
+                  );
+                })}
+              </div>
+
+              <Button disabled={!isFormValid()} type="submit" className="mt-6 w-full">
+                {currentEditedId !== null ? "Edit" : "Add"}
+              </Button>
+            </form>
           </div>
         </SheetContent>
       </Sheet>

@@ -1,5 +1,11 @@
 const mongoose = require("mongoose");
 
+const VariantSchema = new mongoose.Schema({
+  color: { type: String, required: true },
+  size: { type: String, required: true },
+  quantity: { type: Number, required: true, min: 0 },
+});
+
 const ProductSchema = new mongoose.Schema(
   {
     image: String,
@@ -7,11 +13,9 @@ const ProductSchema = new mongoose.Schema(
     description: String,
     category: String,
     brand: String,
-    size: String,
-    color: String,
+    variants: [VariantSchema],
     price: Number,
     salePrice: Number,
-    totalStock: Number,
     averageReview: Number,
     season: {
       type: String,
@@ -24,5 +28,15 @@ const ProductSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+ProductSchema.virtual("totalStock").get(function () {
+  if (this.variants && this.variants.length > 0) {
+    return this.variants.reduce((sum, variant) => sum + (variant.quantity || 0), 0);
+  }
+  return 0;
+});
+
+ProductSchema.set("toJSON", { virtuals: true });
+ProductSchema.set("toObject", { virtuals: true });
 
 module.exports = mongoose.model("Product", ProductSchema);
