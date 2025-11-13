@@ -139,10 +139,34 @@ export const filterOptions = {
 };
 
 export const sortOptions = [
-  { id: "price-lowtohigh", label: "Price: Low to High" },
-  { id: "price-hightolow", label: "Price: High to Low" },
-  { id: "title-atoz", label: "Title: A to Z" },
-  { id: "title-ztoa", label: "Title: Z to A" },
+  {
+    id: "price-lowtohigh",
+    label: "Price: Low to High",
+    compareFn: (a, b) => {
+      const aPrice = a.salePrice > 0 ? a.salePrice : a.price;
+      const bPrice = b.salePrice > 0 ? b.salePrice : b.price;
+      return aPrice - bPrice;
+    },
+  },
+  {
+    id: "price-hightolow",
+    label: "Price: High to Low",
+    compareFn: (a, b) => {
+      const aPrice = a.salePrice > 0 ? a.salePrice : a.price;
+      const bPrice = b.salePrice > 0 ? b.salePrice : b.price;
+      return bPrice - aPrice;
+    },
+  },
+  {
+    id: "title-atoz",
+    label: "Title: A to Z",
+    compareFn: (a, b) => a.title.localeCompare(b.title),
+  },
+  {
+    id: "title-ztoa",
+    label: "Title: Z to A",
+    compareFn: (a, b) => b.title.localeCompare(a.title),
+  },
 ];
 
 export const categoryOptionsMap = {
