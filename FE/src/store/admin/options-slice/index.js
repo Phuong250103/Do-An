@@ -23,10 +23,10 @@ export const fetchOptions = createAsyncThunk(
 // Add new option
 export const addOption = createAsyncThunk(
   "/options/addOption",
-  async ({ type, name, label }) => {
+  async ({ type, name, label, code }) => {
     const result = await axios.post(
       `http://localhost:5000/api/admin/options/${type}`,
-      { name, label },
+      { name, label, code },
       {
         headers: {
           "Content-Type": "application/json",
@@ -40,10 +40,10 @@ export const addOption = createAsyncThunk(
 // Edit option
 export const editOption = createAsyncThunk(
   "/options/editOption",
-  async ({ type, id, name, label }) => {
+  async ({ type, id, name, label, code }) => {
     const result = await axios.put(
       `http://localhost:5000/api/admin/options/${type}/${id}`,
-      { name, label },
+      { name, label, code },
       {
         headers: {
           "Content-Type": "application/json",
@@ -58,9 +58,7 @@ export const editOption = createAsyncThunk(
 export const deleteOption = createAsyncThunk(
   "/options/deleteOption",
   async ({ type, id }) => {
-    await axios.delete(
-      `http://localhost:5000/api/admin/options/${type}/${id}`
-    );
+    await axios.delete(`http://localhost:5000/api/admin/options/${type}/${id}`);
     return { type, id };
   }
 );
@@ -118,7 +116,9 @@ const AdminOptionsSlice = createSlice({
         };
         const typeKey = typeMap[type];
         if (typeKey && state.hasOwnProperty(typeKey)) {
-          const index = state[typeKey].findIndex((item) => item._id === data._id);
+          const index = state[typeKey].findIndex(
+            (item) => item._id === data._id
+          );
           if (index !== -1) {
             state[typeKey][index] = data;
           }
@@ -142,4 +142,3 @@ const AdminOptionsSlice = createSlice({
 });
 
 export default AdminOptionsSlice.reducer;
-

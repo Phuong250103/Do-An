@@ -6,7 +6,11 @@ const calculateSeasonalPrice = (product) => {
 
   if (productData.seasonEndDate) {
     // So sánh ngày (không tính giờ phút giây) để chính xác
-    const todayDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const todayDate = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate()
+    );
     const seasonEndDateOnly = new Date(
       new Date(productData.seasonEndDate).getFullYear(),
       new Date(productData.seasonEndDate).getMonth(),
@@ -79,32 +83,8 @@ const getFilteredProducts = async (req, res) => {
 
     // let sort = {};
 
-    // switch (sortBy) {
-    //   case "price-lowtohigh":
-    //     sort.price = 1;
-
-    //     break;
-    //   case "price-hightolow":
-    //     sort.price = -1;
-
-    //     break;
-    //   case "title-atoz":
-    //     sort.title = 1;
-
-    //     break;
-
-    //   case "title-ztoa":
-    //     sort.title = -1;
-
-    //     break;
-
-    //   default:
-    //     sort.price = 1;
-    //     break;
-    // }
-
     const products = await Product.find({});
-    
+
     // Tính toán giá động cho từng sản phẩm
     const productsWithCalculatedPrice = products.map((product) =>
       calculateSeasonalPrice(product)
@@ -123,6 +103,32 @@ const getFilteredProducts = async (req, res) => {
   }
 };
 
+const getProductDetails = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const product = await Product.findById(id);
+
+    if (!product)
+      return res.status(404).json({
+        success: false,
+        message: "Product not found!",
+      });
+
+    res.status(200).json({
+      success: true,
+      data: product,
+    });
+  } catch (e) {
+    console.log(error);
+    res.status(500).json({
+      success: false,
+      message: "Some error occured",
+    });
+  }
+};
+
 module.exports = {
   getFilteredProducts,
+  calculateSeasonalPrice,
+  getProductDetails,
 };

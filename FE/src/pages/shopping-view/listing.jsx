@@ -12,11 +12,18 @@ import { sortOptions } from "@/config";
 import { useDispatch, useSelector } from "react-redux";
 import { useEffect, useState, useMemo } from "react";
 import ShoppingProductTile from "@/components/shopping-view/product-tile";
-import { fetchAllFilteredProducts } from "@/store/shop/products-slice";
+import {
+  fetchAllFilteredProducts,
+  fetchProductDetails,
+} from "@/store/shop/products-slice";
+import ProductDetailsDialog from "@/components/shopping-view/product-details";
 
 function ShoppingListing() {
   const dispatch = useDispatch();
-  const { productList } = useSelector((state) => state.shopProducts);
+  const { productList, productDetails } = useSelector(
+    (state) => state.shopProducts
+  );
+  const [openDetailsDialog, setOpenDetailsDialog] = useState(false);
 
   const [sort, setSort] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -43,6 +50,14 @@ function ShoppingListing() {
   useEffect(() => {
     dispatch(fetchAllFilteredProducts());
   }, [dispatch]);
+
+  function handleGetProductDetails(getCurrentProductId) {
+    dispatch(fetchProductDetails(getCurrentProductId));
+  }
+
+  useEffect(() => {
+    if (productDetails !== null) setOpenDetailsDialog(true);
+  }, [productDetails]);
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-[200px_1fr] gap-6 p-4 md:p-6">
@@ -81,7 +96,11 @@ function ShoppingListing() {
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-4">
           {currentProducts?.length > 0 ? (
             currentProducts.map((productItem) => (
-              <ShoppingProductTile key={productItem.id} product={productItem} />
+              <ShoppingProductTile
+                key={productItem.id}
+                handleGetProductDetails={handleGetProductDetails}
+                product={productItem}
+              />
             ))
           ) : (
             <p className="text-center text-gray-500">No products found.</p>
@@ -123,6 +142,11 @@ function ShoppingListing() {
           </div>
         )}
       </div>
+      <ProductDetailsDialog
+        open={openDetailsDialog}
+        setOpen={setOpenDetailsDialog}
+        productDetails={productDetails}
+      />
     </div>
   );
 }

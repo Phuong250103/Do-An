@@ -3,7 +3,7 @@ import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
 import { useSelector } from "react-redux";
 
-function ShoppingProductTile({ product }) {
+function ShoppingProductTile({ product, handleGetProductDetails }) {
   const { categories, brands } = useSelector((state) => state.adminOptions);
 
   // Helper function to get label from name
@@ -17,7 +17,7 @@ function ShoppingProductTile({ product }) {
 
   return (
     <Card className="w-full max-w-sm mx-auto">
-      <div>
+      <div onClick={() => handleGetProductDetails(product?._id)}>
         <div className="relative">
           <img
             src={product?.image}

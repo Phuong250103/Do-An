@@ -29,7 +29,7 @@ function AdminOptions() {
   const [selectedType, setSelectedType] = useState("category");
   const [openDialog, setOpenDialog] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
-  const [formData, setFormData] = useState({ name: "", label: "" });
+  const [formData, setFormData] = useState({ name: "", label: "", code: "" });
   const dispatch = useDispatch();
   const { categories, brands, sizes, colors } = useSelector(
     (state) => state.adminOptions
@@ -58,13 +58,13 @@ function AdminOptions() {
 
   const handleAdd = () => {
     setEditingItem(null);
-    setFormData({ name: "", label: "" });
+    setFormData({ name: "", label: "", code: "" });
     setOpenDialog(true);
   };
 
   const handleEdit = (item) => {
     setEditingItem(item);
-    setFormData({ name: item.name, label: item.label });
+    setFormData({ name: item.name, label: item.label, code: item.code });
     setOpenDialog(true);
   };
 
@@ -102,6 +102,7 @@ function AdminOptions() {
           id: editingItem._id,
           name: formData.name,
           label: formData.label,
+          code: formData.code,
         })
       ).then((data) => {
         if (data?.payload) {
@@ -118,6 +119,7 @@ function AdminOptions() {
           type: selectedType,
           name: formData.name,
           label: formData.label,
+          code: formData.code,
         })
       ).then((data) => {
         if (data?.payload) {
@@ -125,7 +127,7 @@ function AdminOptions() {
             title: "Item added successfully",
           });
           setOpenDialog(false);
-          setFormData({ name: "", label: "" });
+          setFormData({ name: "", label: "", code: "" });
           dispatch(fetchOptions(selectedType));
         }
       });
@@ -169,9 +171,7 @@ function AdminOptions() {
                 >
                   <div>
                     <p className="font-semibold">{item.label}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {item.name}
-                    </p>
+                    <p className="text-sm text-muted-foreground">{item.name}</p>
                   </div>
                   <div className="flex gap-2">
                     <Button
@@ -228,10 +228,22 @@ function AdminOptions() {
                 placeholder="Enter label"
               />
             </div>
+            {selectedType === "color" && (
+              <div>
+                <Label htmlFor="code">Color Code</Label>
+                <Input
+                  id="code"
+                  type="color"
+                  value={formData.code}
+                  onChange={(e) =>
+                    setFormData({ ...formData, code: e.target.value })
+                  }
+                  className="w-16 h-10 p-1"
+                />
+              </div>
+            )}
             <div className="flex gap-2">
-              <Button type="submit">
-                {editingItem ? "Update" : "Add"}
-              </Button>
+              <Button type="submit">{editingItem ? "Update" : "Add"}</Button>
               <Button
                 type="button"
                 variant="outline"
@@ -248,4 +260,3 @@ function AdminOptions() {
 }
 
 export default AdminOptions;
-

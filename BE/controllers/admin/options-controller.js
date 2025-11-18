@@ -45,7 +45,7 @@ const getAllOptions = async (req, res) => {
 const addOption = async (req, res) => {
   try {
     const { type } = req.params;
-    const { name, label } = req.body;
+    const { name, label, code } = req.body;
 
     const Model = getModel(type);
 
@@ -56,7 +56,7 @@ const addOption = async (req, res) => {
       });
     }
 
-    if (!name || !label) {
+    if (!name || !label || !code) {
       return res.status(400).json({
         success: false,
         message: "Name and label are required",
@@ -72,7 +72,7 @@ const addOption = async (req, res) => {
       });
     }
 
-    const newOption = new Model({ name, label });
+    const newOption = new Model({ name, label, code });
     await newOption.save();
 
     res.status(201).json({
@@ -92,7 +92,7 @@ const addOption = async (req, res) => {
 const editOption = async (req, res) => {
   try {
     const { type, id } = req.params;
-    const { name, label } = req.body;
+    const { name, label, code } = req.body;
 
     const Model = getModel(type);
 
@@ -124,6 +124,7 @@ const editOption = async (req, res) => {
 
     if (name) option.name = name;
     if (label) option.label = label;
+    if (code) option.code = code;
 
     await option.save();
 
@@ -181,4 +182,3 @@ module.exports = {
   editOption,
   deleteOption,
 };
-

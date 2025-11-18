@@ -21,7 +21,7 @@ function ProductVariants({ variants, setVariants, sizes, colors }) {
         }))
       : [{ color: "", size: "", quantity: 0 }]
   );
-  
+
   const isUpdatingFromProps = useRef(false);
   const prevVariantsRef = useRef(variants);
 
@@ -35,10 +35,10 @@ function ProductVariants({ variants, setVariants, sizes, colors }) {
     // So sánh với variants trước đó
     const prevVariantsString = JSON.stringify(prevVariantsRef.current || []);
     const currentVariantsString = JSON.stringify(variants || []);
-    
+
     if (prevVariantsString !== currentVariantsString) {
       prevVariantsRef.current = variants;
-      
+
       if (variants && variants.length > 0) {
         setLocalVariants(
           variants.map((v) => ({
@@ -57,11 +57,11 @@ function ProductVariants({ variants, setVariants, sizes, colors }) {
     const validVariants = localVariants.filter(
       (v) => v.color && v.size && v.quantity > 0
     );
-    
+
     // So sánh với variants hiện tại từ props để tránh cập nhật không cần thiết
     const currentVariantsString = JSON.stringify(validVariants);
     const propsVariantsString = JSON.stringify(variants || []);
-    
+
     if (currentVariantsString !== propsVariantsString) {
       isUpdatingFromProps.current = true;
       setVariants(validVariants);
@@ -101,9 +101,7 @@ function ProductVariants({ variants, setVariants, sizes, colors }) {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <Label className="text-base font-semibold">
-          Biến thể sản phẩm (Màu, Kích thước, Số lượng)
-        </Label>
+        <Label className="text-base font-semibold">Product variations</Label>
         <Button
           type="button"
           variant="outline"
@@ -112,7 +110,7 @@ function ProductVariants({ variants, setVariants, sizes, colors }) {
           className="flex items-center gap-2"
         >
           <Plus className="h-4 w-4" />
-          Thêm biến thể
+          Add Variant
         </Button>
       </div>
 
@@ -123,36 +121,44 @@ function ProductVariants({ variants, setVariants, sizes, colors }) {
             className="flex items-end gap-2 p-3 border rounded-md bg-muted/30"
           >
             <div className="flex-1">
-              <Label className="text-sm">Màu</Label>
+              <Label className="text-sm">Color</Label>
               <Select
                 value={variant.color}
                 onValueChange={(value) => updateVariant(index, "color", value)}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Chọn màu" />
+                  <SelectValue placeholder="Select Color" />
                 </SelectTrigger>
                 <SelectContent>
                   {colors && colors.length > 0 ? (
                     colors.map((color) => (
                       <SelectItem key={color.name} value={color.name}>
-                        {color.label}
+                        <div className="flex items-center gap-2">
+                          <span
+                            className="w-4 h-4 rounded-xl border"
+                            style={{ backgroundColor: color.code }}
+                          ></span>
+                          {color.label}
+                        </div>
                       </SelectItem>
                     ))
                   ) : (
-                    <SelectItem value="" disabled>Đang tải...</SelectItem>
+                    <SelectItem value="" disabled>
+                      Đang tải...
+                    </SelectItem>
                   )}
                 </SelectContent>
               </Select>
             </div>
 
             <div className="flex-1">
-              <Label className="text-sm">Kích thước</Label>
+              <Label className="text-sm">Size</Label>
               <Select
                 value={variant.size}
                 onValueChange={(value) => updateVariant(index, "size", value)}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Chọn kích thước" />
+                  <SelectValue placeholder="Choose Size" />
                 </SelectTrigger>
                 <SelectContent>
                   {sizes && sizes.length > 0 ? (
@@ -162,14 +168,16 @@ function ProductVariants({ variants, setVariants, sizes, colors }) {
                       </SelectItem>
                     ))
                   ) : (
-                    <SelectItem value="" disabled>Đang tải...</SelectItem>
+                    <SelectItem value="" disabled>
+                      Đang tải...
+                    </SelectItem>
                   )}
                 </SelectContent>
               </Select>
             </div>
 
-            <div className="w-32">
-              <Label className="text-sm">Số lượng</Label>
+            <div className="w-20">
+              <Label className="text-sm">Quantity</Label>
               <Input
                 type="number"
                 min="0"
@@ -201,7 +209,7 @@ function ProductVariants({ variants, setVariants, sizes, colors }) {
 
       {localVariants.length > 0 && (
         <div className="text-sm text-muted-foreground">
-          Tổng số lượng:{" "}
+          Total:{" "}
           <span className="font-semibold">
             {localVariants.reduce(
               (sum, v) => sum + (parseInt(v.quantity) || 0),
@@ -215,4 +223,3 @@ function ProductVariants({ variants, setVariants, sizes, colors }) {
 }
 
 export default ProductVariants;
-
