@@ -25,6 +25,7 @@ const addProduct = async (req, res) => {
   try {
     const {
       image,
+      colorImages,
       title,
       description,
       category,
@@ -98,6 +99,7 @@ const addProduct = async (req, res) => {
 
     const newlyCreatedProduct = new Product({
       image,
+      colorImages: colorImages || {},
       title,
       description,
       category,
@@ -218,6 +220,7 @@ const editProduct = async (req, res) => {
     const { id } = req.params;
     const {
       image,
+      colorImages,
       title,
       description,
       category,
@@ -271,6 +274,9 @@ const editProduct = async (req, res) => {
     findProduct.brand = brand || findProduct.brand;
     findProduct.price = price === "" ? 0 : price || findProduct.price;
     findProduct.image = image || findProduct.image;
+    if (colorImages !== undefined) {
+      findProduct.colorImages = colorImages;
+    }
     findProduct.averageReview = averageReview || findProduct.averageReview;
     
     // Cập nhật variants
@@ -287,8 +293,7 @@ const editProduct = async (req, res) => {
       findProduct.discountAfterSeason = discountAfterSeason;
     }
 
-    // Kiểm tra và áp dụng giá khi hết mùa
-    // Phải qua ngày endseason mới áp dụng giảm giá (không áp dụng trong ngày endseason)
+
     const now = new Date();
     if (findProduct.seasonEndDate) {
       const todayDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());

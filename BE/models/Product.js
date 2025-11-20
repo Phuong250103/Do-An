@@ -9,6 +9,11 @@ const VariantSchema = new mongoose.Schema({
 const ProductSchema = new mongoose.Schema(
   {
     image: String,
+    colorImages: {
+      type: Map,
+      of: String,
+      default: {},
+    },
     title: String,
     description: String,
     category: String,

@@ -10,8 +10,9 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import ColorImageUpload from "./color-image-upload";
 
-function ProductVariants({ variants, setVariants, sizes, colors }) {
+function ProductVariants({ variants, setVariants, sizes, colors, colorImages, setColorImages }) {
   const [localVariants, setLocalVariants] = useState(
     variants && variants.length > 0
       ? variants.map((v) => ({
@@ -98,6 +99,23 @@ function ProductVariants({ variants, setVariants, sizes, colors }) {
     return colorOption ? colorOption.label : colorName;
   };
 
+  const getColorCode = (colorName) => {
+    const colorOption = colors.find((c) => c.name === colorName);
+    return colorOption ? colorOption.code : "#000000";
+  };
+
+  // Lấy danh sách các màu unique từ variants
+  const uniqueColors = [
+    ...new Set(localVariants.map((v) => v.color).filter((c) => c)),
+  ];
+
+  const handleColorImageChange = (colorName, imageUrl) => {
+    setColorImages((prev) => ({
+      ...prev,
+      [colorName]: imageUrl,
+    }));
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -113,6 +131,40 @@ function ProductVariants({ variants, setVariants, sizes, colors }) {
           Add Variant
         </Button>
       </div>
+
+      {/* Color Images Section */}
+      {uniqueColors.length > 0 && (
+        <div className="space-y-3 p-4 border rounded-md bg-muted/20">
+          <Label className="text-sm font-semibold">Color Images</Label>
+          <p className="text-xs text-muted-foreground mb-3">
+            Upload images for each color variant
+          </p>
+          <div className="grid grid-cols-2 gap-3">
+            {uniqueColors.map((colorName) => {
+              const colorOption = colors.find((c) => c.name === colorName);
+              return (
+                <div key={colorName} className="space-y-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span
+                      className="w-4 h-4 rounded-full border"
+                      style={{ backgroundColor: getColorCode(colorName) }}
+                    ></span>
+                    <span className="text-xs font-medium">
+                      {colorOption?.label || colorName}
+                    </span>
+                  </div>
+                  <ColorImageUpload
+                    colorName={colorName}
+                    colorCode={getColorCode(colorName)}
+                    uploadedImageUrl={colorImages?.[colorName] || ""}
+                    onImageUrlChange={(url) => handleColorImageChange(colorName, url)}
+                  />
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       <div className="space-y-3">
         {localVariants.map((variant, index) => (

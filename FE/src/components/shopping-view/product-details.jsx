@@ -1,25 +1,123 @@
 import { Button } from "../ui/button";
 import { Dialog, DialogContent } from "../ui/dialog";
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { Separator } from "../ui/separator";
+import { Avatar, AvatarFallback } from "../ui/avatar";
+import { StarIcon } from "lucide-react";
+import { Input } from "../ui/input";
 
 function ProductDetailsDialog({ open, setOpen, productDetails }) {
   console.log(1111, productDetails);
-  const colors = [
-    ...new Set(productDetails?.variants?.map((v) => v.color) || []),
-  ];
-  const sizes = [
-    ...new Set(productDetails?.variants?.map((v) => v.size) || []),
-  ];
+  const colors = useMemo(() => {
+    return [
+      ...new Set(productDetails?.variants?.map((v) => v.color) || []),
+    ];
+  }, [productDetails?.variants]);
 
-  const [selectedColor, setSelectedColor] = useState(colors[0] || null);
-  const [selectedSize, setSelectedSize] = useState(sizes[0] || null);
+  const [selectedColor, setSelectedColor] = useState(null);
+  const [selectedSize, setSelectedSize] = useState(null);
+  const [quantity, setQuantity] = useState(1);
+
+  useEffect(() => {
+    if (open && productDetails?.variants && colors.length > 0) {
+      const firstColor = colors[0];
+      const firstSizes = [
+        ...new Set(
+          productDetails.variants
+            .filter((v) => v.color === firstColor)
+            .map((v) => v.size)
+        ),
+      ];
+      setSelectedColor(firstColor);
+      setSelectedSize(firstSizes[0] || null);
+      setQuantity(1);
+    } else if (open && (!productDetails?.variants || colors.length === 0)) {
+      setSelectedColor(null);
+      setSelectedSize(null);
+      setQuantity(1);
+    }
+  }, [open, productDetails, colors]);
+
+  // Lọc sizes có sẵn cho màu đã chọn
+  const availableSizes = useMemo(() => {
+    if (!selectedColor || !productDetails?.variants) return [];
+    return [
+      ...new Set(
+        productDetails.variants
+          .filter((v) => v.color === selectedColor)
+          .map((v) => v.size)
+      ),
+    ];
+  }, [selectedColor, productDetails]);
+
+  // Tự động chọn size đầu tiên có sẵn khi chọn màu
+  useEffect(() => {
+    if (selectedColor && availableSizes.length > 0) {
+
+      if (!selectedSize || !availableSizes.includes(selectedSize)) {
+        setSelectedSize(availableSizes[0]);
+      }
+    } else {
+      setSelectedSize(null);
+    }
+  }, [selectedColor, availableSizes, selectedSize]);
+
+  const selectedVariant = useMemo(() => {
+    if (!productDetails?.variants || !selectedColor || !selectedSize) return null;
+    return productDetails.variants.find(
+      (variant) =>
+        variant.color === selectedColor && variant.size === selectedSize
+    );
+  }, [productDetails, selectedColor, selectedSize]);
+
+  const maxQuantity =
+    selectedVariant && typeof selectedVariant.quantity === "number"
+      ? selectedVariant.quantity
+      : 0;
+
+  useEffect(() => {
+    if (maxQuantity > 0 && quantity > maxQuantity) {
+      setQuantity(maxQuantity);
+    } else if (maxQuantity === 0) {
+      setQuantity(0);
+    } else if (quantity === 0 && maxQuantity > 0) {
+      setQuantity(1);
+    }
+  }, [maxQuantity, quantity]);
+
+  const incrementQuantity = () => {
+    if (maxQuantity > 0) {
+      setQuantity((prev) => Math.min(prev + 1, maxQuantity));
+    }
+  };
+  const decrementQuantity = () =>
+    setQuantity((prev) => (prev > 1 ? prev - 1 : prev));
+
+  // Lấy ảnh theo màu được chọn
+  const currentImage = useMemo(() => {
+    if (!selectedColor || !productDetails) {
+      return productDetails?.image;
+    }
+    
+    const colorImages = productDetails?.colorImages;
+    if (colorImages) {
+      if (colorImages instanceof Map || colorImages.get) {
+        return colorImages.get(selectedColor) || productDetails?.image;
+      }
+      if (typeof colorImages === 'object' && colorImages[selectedColor]) {
+        return colorImages[selectedColor];
+      }
+    }
+    
+    return productDetails?.image;
+  }, [selectedColor, productDetails]);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent className="grid grid-cols-2 gap-8 sm:p-12 max-w-[90vw] sm:max-w-[80vw] lg:max-w-[70vw]">
         <div className="relative overflow-hidden rounded-lg">
           <img
-            src={productDetails?.image}
+            src={currentImage}
             alt={productDetails?.title}
             width={600}
             height={600}
@@ -58,10 +156,10 @@ function ProductDetailsDialog({ open, setOpen, productDetails }) {
             )}
 
             {/* Size selector */}
-            {sizes.length > 0 && (
+            {availableSizes.length > 0 && (
               <div className="mb-4">
                 <div className="flex items-center gap-2 mb-2">
-                  {sizes.map((size) => (
+                  {availableSizes.map((size) => (
                     <button
                       key={size}
                       className={`rounded border-2 border-black ${
@@ -84,12 +182,39 @@ function ProductDetailsDialog({ open, setOpen, productDetails }) {
                     </button>
                   ))}
                 </div>
-                <p className="text-sm text-gray-500">Size: {selectedSize}</p>
+                <p className="text-sm text-gray-500">Size: {selectedSize || "Chưa chọn"}</p>
               </div>
             )}
+
+            <div className="mb-4">
+              <div className="flex items-center gap-4">
+                <div className="flex items-center rounded-full bg-gray-100 px-4 py-2 text-xl">
+                  <button
+                    className="px-2 text-2xl disabled:opacity-50 disabled:cursor-not-allowed"
+                    onClick={decrementQuantity}
+                    disabled={quantity <= 1 || maxQuantity === 0}
+                  >
+                    –
+                  </button>
+                  <span className="px-4 text-lg font-semibold">{quantity}</span>
+                  <button
+                    className="px-2 text-2xl disabled:opacity-50 disabled:cursor-not-allowed"
+                    onClick={incrementQuantity}
+                    disabled={maxQuantity === 0 || quantity >= maxQuantity}
+                  >
+                    +
+                  </button>
+                </div>
+                <p className="text-sm text-gray-500">
+                  {maxQuantity === 0
+                    ? "Hết hàng"
+                    : `Còn ${maxQuantity} sản phẩm`}
+                </p>
+              </div>
+            </div>
           </div>
 
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between"> 
             <p
               className={`text-3xl font-bold text-primary ${
                 productDetails?.salePrice > 0 ? "line-through" : ""
@@ -103,8 +228,50 @@ function ProductDetailsDialog({ open, setOpen, productDetails }) {
               </p>
             ) : null}
           </div>
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2">
+              <StarIcon className="w-4 h-4 fill-yellow-500 text-yellow-500" />
+              <StarIcon className="w-4 h-4 fill-yellow-500 text-yellow-500" />
+              <StarIcon className="w-4 h-4 fill-yellow-500 text-yellow-500" />
+              <StarIcon className="w-4 h-4 fill-yellow-500 text-yellow-500" />
+              <StarIcon className="w-4 h-4 fill-yellow-500 text-yellow-500" />
+            </div>
+            <span className="text-sm text-yellow-500">(4.5)</span>
+          </div>
           <div>
-            <Button className="w-full mt-6">Add to cart</Button>
+            <Button className="w-full mt-4" disabled={maxQuantity === 0 || !selectedSize}>
+              {maxQuantity === 0 ? "Out of stock" : "Add to cart"}
+            </Button>
+          </div>
+          <Separator/>
+          <div className="max-h-[120px] overflow-auto">
+            <h2 className="text-xl font-bold mb-4"> Reviews </h2>
+            <div className="grid gap-6">
+              <div className="flex gap-4">
+                <Avatar className="w-10 h-10 border">
+                  <AvatarFallback>P</AvatarFallback>
+                </Avatar>
+                <div className="grid gap-1">
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-bold">PhuongDD</h3>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <StarIcon className="w-4 h-4 fill-yellow-500 text-yellow-500" />
+                    <StarIcon className="w-4 h-4 fill-yellow-500 text-yellow-500" />
+                    <StarIcon className="w-4 h-4 fill-yellow-500 text-yellow-500" />
+                    <StarIcon className="w-4 h-4 fill-yellow-500 text-yellow-500" />
+                    <StarIcon className="w-4 h-4 fill-yellow-500 text-yellow-500" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">This is an amazing product</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="mt-4 flex gap-2">
+              <Input type="text" placeholder="Write a review ...." />
+              <Button>Submit</Button>
+            </div>
           </div>
         </div>
       </DialogContent>

@@ -54,6 +54,7 @@ function AdminProducts() {
   const [imageLoadingState, setImageLoadingState] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [variants, setVariants] = useState([]);
+  const [colorImages, setColorImages] = useState({});
   const { productList } = useSelector((state) => state.adminProducts);
   const { categories, brands, sizes, colors } = useSelector(
     (state) => state.adminOptions
@@ -76,6 +77,7 @@ function AdminProducts() {
             formData: {
               ...formData,
               variants: variants,
+              colorImages: colorImages,
             },
           })
         ).then((data) => {
@@ -85,6 +87,7 @@ function AdminProducts() {
             dispatch(fetchAllProducts());
             setFormData(initialFormData);
             setVariants([]);
+            setColorImages({});
             setOpenCreateProductsDialog(false);
             setCurrentEditedId(null);
           }
@@ -94,6 +97,7 @@ function AdminProducts() {
             ...formData,
             image: uploadedImageUrl,
             variants: variants,
+            colorImages: colorImages,
           })
         ).then((data) => {
           if (data?.payload?.success) {
@@ -102,6 +106,7 @@ function AdminProducts() {
             setImageFile(null);
             setFormData(initialFormData);
             setVariants([]);
+            setColorImages({});
             toast({
               title: "Product add successfully",
             });
@@ -223,6 +228,7 @@ function AdminProducts() {
                 product={productItem}
                 handleDelete={handleDelete}
                 setVariants={setVariants}
+                setColorImages={setColorImages}
               />
             ))
           : null}
@@ -264,6 +270,7 @@ function AdminProducts() {
           setCurrentEditedId(null);
           setFormData(initialFormData);
           setVariants([]);
+          setColorImages({});
         }}
       >
         <SheetContent side="right" className="overflow-auto">
@@ -382,6 +389,8 @@ function AdminProducts() {
                   setVariants={setVariants}
                   sizes={sizes}
                   colors={colors}
+                  colorImages={colorImages}
+                  setColorImages={setColorImages}
                 />
               </div>
 

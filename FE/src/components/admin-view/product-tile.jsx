@@ -8,6 +8,7 @@ function AdminProductTile({
   setCurrentEditedId,
   handleDelete,
   setVariants,
+  setColorImages,
 }) {
   return (
     <Card className="w-full max-w-sm mx-auto">
@@ -48,6 +49,14 @@ function AdminProductTile({
                 setVariants(product.variants);
               } else {
                 setVariants([]);
+              }
+              if (product?.colorImages) {
+                const colorImagesObj = product.colorImages instanceof Map
+                  ? Object.fromEntries(product.colorImages)
+                  : product.colorImages;
+                setColorImages(colorImagesObj || {});
+              } else {
+                setColorImages({});
               }
             }}
           >
