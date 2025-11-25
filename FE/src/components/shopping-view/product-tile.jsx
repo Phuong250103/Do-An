@@ -3,7 +3,11 @@ import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
 import { useSelector } from "react-redux";
 
-function ShoppingProductTile({ product, handleGetProductDetails }) {
+function ShoppingProductTile({
+  product,
+  handleGetProductDetails,
+  handleAddtoCart,
+}) {
   const { categories, brands } = useSelector((state) => state.adminOptions);
 
   // Helper function to get label from name
@@ -55,10 +59,15 @@ function ShoppingProductTile({ product, handleGetProductDetails }) {
             ) : null}
           </div>
         </CardContent>
-        <CardFooter>
-          <Button className="w-full">Add to card</Button>
-        </CardFooter>
       </div>
+      <CardFooter>
+        <Button
+          onClick={() => handleAddtoCart(product?._id)}
+          className="w-full"
+        >
+          Add to cart
+        </Button>
+      </CardFooter>
     </Card>
   );
 }

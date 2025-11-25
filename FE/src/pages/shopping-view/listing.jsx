@@ -17,13 +17,18 @@ import {
   fetchProductDetails,
 } from "@/store/shop/products-slice";
 import ProductDetailsDialog from "@/components/shopping-view/product-details";
+import { addToCart, fetchCartItems } from "@/store/shop/cart-slice";
+import { useToast } from "@/hooks/use-toast";
 
 function ShoppingListing() {
   const dispatch = useDispatch();
   const { productList, productDetails } = useSelector(
     (state) => state.shopProducts
   );
+  const { user } = useSelector((state) => state.auth);
+  const { cartItems } = useSelector((state) => state.shopCart);
   const [openDetailsDialog, setOpenDetailsDialog] = useState(false);
+  const { toast } = useToast();
 
   const [sort, setSort] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -53,6 +58,25 @@ function ShoppingListing() {
 
   function handleGetProductDetails(getCurrentProductId) {
     dispatch(fetchProductDetails(getCurrentProductId));
+  }
+
+  function handleAddtoCart(getCurrentProductId) {
+    dispatch(
+      addToCart({
+        userId: user?.id,
+        productId: getCurrentProductId,
+        quantity: 1,
+        size: getCurrentProductId,
+        color: getCurrentProductId,
+      })
+    ).then((data) => {
+      if (data?.payload?.success) {
+        dispatch(fetchCartItems(user?.id));
+        toast({
+          description: "Product added to cart successfully.",
+        });
+      }
+    });
   }
 
   useEffect(() => {
@@ -100,6 +124,7 @@ function ShoppingListing() {
                 key={productItem.id}
                 handleGetProductDetails={handleGetProductDetails}
                 product={productItem}
+                handleAddtoCart={handleAddtoCart}
               />
             ))
           ) : (

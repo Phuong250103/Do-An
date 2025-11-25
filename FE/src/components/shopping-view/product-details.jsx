@@ -5,13 +5,37 @@ import { Separator } from "../ui/separator";
 import { Avatar, AvatarFallback } from "../ui/avatar";
 import { StarIcon } from "lucide-react";
 import { Input } from "../ui/input";
+import { useDispatch, useSelector } from "react-redux";
+import { addToCart, fetchCartItems } from "@/store/shop/cart-slice";
+import { useToast } from "@/hooks/use-toast";
+import { setProductDetails } from "@/store/shop/products-slice";
 
 function ProductDetailsDialog({ open, setOpen, productDetails }) {
-  console.log(1111, productDetails);
+  const dispatch = useDispatch();
+  const { user } = useSelector((state) => state.auth);
+  const { toast } = useToast();
+
+  function handleAddtoCart(getCurrentProductId) {
+    dispatch(
+      addToCart({
+        userId: user?.id,
+        productId: getCurrentProductId,
+        quantity: 1,
+        size: getCurrentProductId,
+        color: getCurrentProductId,
+      })
+    ).then((data) => {
+      if (data?.payload?.success) {
+        dispatch(fetchCartItems(user?.id));
+        toast({
+          description: "Product added to cart successfully.",
+        });
+      }
+    });
+  }
+
   const colors = useMemo(() => {
-    return [
-      ...new Set(productDetails?.variants?.map((v) => v.color) || []),
-    ];
+    return [...new Set(productDetails?.variants?.map((v) => v.color) || [])];
   }, [productDetails?.variants]);
 
   const [selectedColor, setSelectedColor] = useState(null);
@@ -53,7 +77,6 @@ function ProductDetailsDialog({ open, setOpen, productDetails }) {
   // Tự động chọn size đầu tiên có sẵn khi chọn màu
   useEffect(() => {
     if (selectedColor && availableSizes.length > 0) {
-
       if (!selectedSize || !availableSizes.includes(selectedSize)) {
         setSelectedSize(availableSizes[0]);
       }
@@ -63,7 +86,8 @@ function ProductDetailsDialog({ open, setOpen, productDetails }) {
   }, [selectedColor, availableSizes, selectedSize]);
 
   const selectedVariant = useMemo(() => {
-    if (!productDetails?.variants || !selectedColor || !selectedSize) return null;
+    if (!productDetails?.variants || !selectedColor || !selectedSize)
+      return null;
     return productDetails.variants.find(
       (variant) =>
         variant.color === selectedColor && variant.size === selectedSize
@@ -98,22 +122,27 @@ function ProductDetailsDialog({ open, setOpen, productDetails }) {
     if (!selectedColor || !productDetails) {
       return productDetails?.image;
     }
-    
+
     const colorImages = productDetails?.colorImages;
     if (colorImages) {
       if (colorImages instanceof Map || colorImages.get) {
         return colorImages.get(selectedColor) || productDetails?.image;
       }
-      if (typeof colorImages === 'object' && colorImages[selectedColor]) {
+      if (typeof colorImages === "object" && colorImages[selectedColor]) {
         return colorImages[selectedColor];
       }
     }
-    
+
     return productDetails?.image;
   }, [selectedColor, productDetails]);
 
+  function handleDialogClose() {
+    setOpen(false);
+    dispatch(setProductDetails());
+  }
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleDialogClose}>
       <DialogContent className="grid grid-cols-2 gap-8 sm:p-12 max-w-[90vw] sm:max-w-[80vw] lg:max-w-[70vw]">
         <div className="relative overflow-hidden rounded-lg">
           <img
@@ -182,7 +211,9 @@ function ProductDetailsDialog({ open, setOpen, productDetails }) {
                     </button>
                   ))}
                 </div>
-                <p className="text-sm text-gray-500">Size: {selectedSize || "Chưa chọn"}</p>
+                <p className="text-sm text-gray-500">
+                  Size: {selectedSize || "Chưa chọn"}
+                </p>
               </div>
             )}
 
@@ -214,7 +245,7 @@ function ProductDetailsDialog({ open, setOpen, productDetails }) {
             </div>
           </div>
 
-          <div className="flex items-center justify-between"> 
+          <div className="flex items-center justify-between">
             <p
               className={`text-3xl font-bold text-primary ${
                 productDetails?.salePrice > 0 ? "line-through" : ""
@@ -239,11 +270,15 @@ function ProductDetailsDialog({ open, setOpen, productDetails }) {
             <span className="text-sm text-yellow-500">(4.5)</span>
           </div>
           <div>
-            <Button className="w-full mt-4" disabled={maxQuantity === 0 || !selectedSize}>
+            <Button
+              onClick={() => handleAddtoCart(productDetails?._id)}
+              className="w-full mt-4"
+              disabled={maxQuantity === 0 || !selectedSize}
+            >
               {maxQuantity === 0 ? "Out of stock" : "Add to cart"}
             </Button>
           </div>
-          <Separator/>
+          <Separator />
           <div className="max-h-[120px] overflow-auto">
             <h2 className="text-xl font-bold mb-4"> Reviews </h2>
             <div className="grid gap-6">
@@ -263,7 +298,9 @@ function ProductDetailsDialog({ open, setOpen, productDetails }) {
                     <StarIcon className="w-4 h-4 fill-yellow-500 text-yellow-500" />
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500">This is an amazing product</p>
+                    <p className="text-sm text-gray-500">
+                      This is an amazing product
+                    </p>
                   </div>
                 </div>
               </div>

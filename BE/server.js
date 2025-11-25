@@ -2,10 +2,12 @@ const express = require("express");
 const mongoose = require("mongoose");
 const cookieParser = require("cookie-parser");
 const cors = require("cors");
-const authRoutes = require("./routes/auth/auth-routes");
-const adminProductRoutes = require("./routes/admin/products-routes");
-const shopProductRoutes = require("./routes/shop/products-routes");
-const adminOptionsRoutes = require("./routes/admin/options-routes");
+const authRoute = require("./routes/auth/auth-routes");
+const adminProductRoute = require("./routes/admin/products-routes");
+const adminOptionsRoute = require("./routes/admin/options-routes");
+const shopProductRoute = require("./routes/shop/products-routes");
+const shopCartRoute = require("./routes/shop/cart-routes");
+
 const cron = require("node-cron");
 const Product = require("./models/Product");
 
@@ -39,7 +41,11 @@ app.use(
 cron.schedule("0 0 * * *", async () => {
   const today = new Date();
   // So sánh ngày (không tính giờ phút giây) để chính xác
-  const todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  const todayDate = new Date(
+    today.getFullYear(),
+    today.getMonth(),
+    today.getDate()
+  );
 
   try {
     // Tìm tất cả sản phẩm có mùa đã hết (phải qua ngày endseason)
@@ -56,7 +62,7 @@ cron.schedule("0 0 * * *", async () => {
           new Date(p.seasonEndDate).getMonth(),
           new Date(p.seasonEndDate).getDate()
         );
-        
+
         // Chỉ áp dụng khi đã qua ngày endseason (không áp dụng trong ngày endseason)
         if (todayDate > seasonEndDateOnly) {
           const calculatedSalePrice = Math.round(
@@ -98,13 +104,13 @@ cron.schedule("0 0 * * *", async () => {
           new Date(p.seasonEndDate).getMonth(),
           new Date(p.seasonEndDate).getDate()
         );
-        
+
         // Chỉ kiểm tra và sửa giá khi đã qua ngày endseason
         if (todayDate > seasonEndDateOnly) {
           const expectedSalePrice = Math.round(
             p.price * (1 - p.discountAfterSeason / 100)
           );
-          
+
           // Nếu giá hiện tại không đúng với giá nên có, cập nhật lại
           if (p.salePrice !== expectedSalePrice) {
             p.salePrice = expectedSalePrice;
@@ -120,10 +126,11 @@ cron.schedule("0 0 * * *", async () => {
 
 app.use(cookieParser());
 app.use(express.json());
-app.use("/api/auth", authRoutes);
-app.use("/api/admin/products", adminProductRoutes);
-app.use("/api/admin/options", adminOptionsRoutes);
-app.use("/api/shop/products", shopProductRoutes);
+app.use("/api/auth", authRoute);
+app.use("/api/admin/products", adminProductRoute);
+app.use("/api/admin/options", adminOptionsRoute);
+app.use("/api/shop/products", shopProductRoute);
+app.use("/api/shop/cart", shopCartRoute);
 
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
