@@ -59,15 +59,10 @@ function ShoppingProductTile({
             ) : null}
           </div>
         </CardContent>
+        <CardFooter>
+          <Button className="w-full">Detail</Button>
+        </CardFooter>
       </div>
-      <CardFooter>
-        <Button
-          onClick={() => handleAddtoCart(product?._id)}
-          className="w-full"
-        >
-          Add to cart
-        </Button>
-      </CardFooter>
     </Card>
   );
 }

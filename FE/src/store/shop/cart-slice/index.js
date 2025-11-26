@@ -37,9 +37,12 @@ export const fetchCartItems = createAsyncThunk(
 
 export const deleteCartItem = createAsyncThunk(
   "cart/deleteCartItem",
-  async ({ userId, productId }) => {
+  async ({ userId, productId, color, size }) => {
     const response = await axios.delete(
-      `http://localhost:5000/api/shop/cart/${userId}/${productId}`
+      `http://localhost:5000/api/shop/cart/${userId}/${productId}`,
+      {
+        params: { color, size },
+      }
     );
 
     return response.data;

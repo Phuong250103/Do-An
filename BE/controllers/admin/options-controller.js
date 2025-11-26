@@ -56,10 +56,18 @@ const addOption = async (req, res) => {
       });
     }
 
-    if (!name || !label || !code) {
+    if (!name || !label) {
       return res.status(400).json({
         success: false,
         message: "Name and label are required",
+      });
+    }
+
+    // Only color requires code
+    if (type === "color" && !code) {
+      return res.status(400).json({
+        success: false,
+        message: "Code is required for color",
       });
     }
 
@@ -72,7 +80,11 @@ const addOption = async (req, res) => {
       });
     }
 
-    const newOption = new Model({ name, label, code });
+    const newOptionData = { name, label };
+    if (type === "color") newOptionData.code = code;
+
+    const newOption = new Model(newOptionData);
+
     await newOption.save();
 
     res.status(201).json({

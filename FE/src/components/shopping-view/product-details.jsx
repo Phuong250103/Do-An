@@ -16,13 +16,20 @@ function ProductDetailsDialog({ open, setOpen, productDetails }) {
   const { toast } = useToast();
 
   function handleAddtoCart(getCurrentProductId) {
+    if (!selectedColor || !selectedSize) {
+      toast({
+        description: "Vui lòng chọn màu và size.",
+        variant: "destructive",
+      });
+      return;
+    }
     dispatch(
       addToCart({
         userId: user?.id,
         productId: getCurrentProductId,
-        quantity: 1,
-        size: getCurrentProductId,
-        color: getCurrentProductId,
+        quantity: quantity,
+        size: selectedSize,
+        color: selectedColor,
       })
     ).then((data) => {
       if (data?.payload?.success) {

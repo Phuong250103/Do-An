@@ -67,7 +67,7 @@ const fetchCartItems = async (req, res) => {
 
     const cart = await Cart.findOne({ userId }).populate({
       path: "items.productId",
-      select: "image title price salePrice",
+      select: "image colorImages title price salePrice",
     });
 
     if (!cart) {
@@ -86,16 +86,30 @@ const fetchCartItems = async (req, res) => {
       await cart.save();
     }
 
-    const populateCartItems = validItems.map((item) => ({
-      productId: item.productId._id,
-      image: item.productId.image,
-      title: item.productId.title,
-      color: item.color,
-      size: item.size,
-      price: item.productId.price,
-      salePrice: item.productId.salePrice,
-      quantity: item.quantity,
-    }));
+    const populateCartItems = validItems.map((item) => {
+      // Lấy ảnh theo màu
+      let imageUrl = item.productId.image; // Ảnh mặc định
+      if (item.color && item.productId.colorImages) {
+        const colorImages = item.productId.colorImages;
+        // colorImages có thể là Map hoặc object
+        if (colorImages instanceof Map) {
+          imageUrl = colorImages.get(item.color) || imageUrl;
+        } else if (typeof colorImages === "object" && colorImages[item.color]) {
+          imageUrl = colorImages[item.color];
+        }
+      }
+
+      return {
+        productId: item.productId._id,
+        image: imageUrl,
+        title: item.productId.title,
+        color: item.color,
+        size: item.size,
+        price: item.productId.price,
+        salePrice: item.productId.salePrice,
+        quantity: item.quantity,
+      };
+    });
 
     res.status(200).json({
       success: true,
@@ -115,9 +129,9 @@ const fetchCartItems = async (req, res) => {
 
 const updateCartItemQty = async (req, res) => {
   try {
-    const { userId, productId, quantity } = req.body;
+    const { userId, productId, quantity, color, size } = req.body;
 
-    if (!userId || !productId || quantity <= 0) {
+    if (!userId || !productId || quantity <= 0 || !color || !size) {
       return res.status(400).json({
         success: false,
         message: "Invalid data provided!",
@@ -133,7 +147,10 @@ const updateCartItemQty = async (req, res) => {
     }
 
     const findCurrentProductIndex = cart.items.findIndex(
-      (item) => item.productId.toString() === productId
+      (item) =>
+        item.productId.toString() === productId &&
+        item.color === color &&
+        item.size === size
     );
 
     if (findCurrentProductIndex === -1) {
@@ -148,17 +165,32 @@ const updateCartItemQty = async (req, res) => {
 
     await cart.populate({
       path: "items.productId",
-      select: "image title price salePrice",
+      select: "image colorImages title price salePrice",
     });
 
-    const populateCartItems = cart.items.map((item) => ({
-      productId: item.productId ? item.productId._id : null,
-      image: item.productId ? item.productId.image : null,
-      title: item.productId ? item.productId.title : "Product not found",
-      price: item.productId ? item.productId.price : null,
-      salePrice: item.productId ? item.productId.salePrice : null,
-      quantity: item.quantity,
-    }));
+    const populateCartItems = cart.items.map((item) => {
+      // Lấy ảnh theo màu
+      let imageUrl = item.productId ? item.productId.image : null;
+      if (item.color && item.productId && item.productId.colorImages) {
+        const colorImages = item.productId.colorImages;
+        if (colorImages instanceof Map) {
+          imageUrl = colorImages.get(item.color) || imageUrl;
+        } else if (typeof colorImages === "object" && colorImages[item.color]) {
+          imageUrl = colorImages[item.color];
+        }
+      }
+
+      return {
+        productId: item.productId ? item.productId._id : null,
+        image: imageUrl,
+        title: item.productId ? item.productId.title : "Product not found",
+        price: item.productId ? item.productId.price : null,
+        salePrice: item.productId ? item.productId.salePrice : null,
+        color: item.color ? item.color : null,
+        size: item.size ? item.size : null,
+        quantity: item.quantity,
+      };
+    });
 
     res.status(200).json({
       success: true,
@@ -179,17 +211,16 @@ const updateCartItemQty = async (req, res) => {
 const deleteCartItem = async (req, res) => {
   try {
     const { userId, productId } = req.params;
-    if (!userId || !productId) {
+    const { color, size } = req.query;
+    
+    if (!userId || !productId || !color || !size) {
       return res.status(400).json({
         success: false,
         message: "Invalid data provided!",
       });
     }
 
-    const cart = await Cart.findOne({ userId }).populate({
-      path: "items.productId",
-      select: "image title price salePrice",
-    });
+    const cart = await Cart.findOne({ userId });
 
     if (!cart) {
       return res.status(404).json({
@@ -199,26 +230,44 @@ const deleteCartItem = async (req, res) => {
     }
 
     cart.items = cart.items.filter(
-      (item) => item.productId._id.toString() !== productId
+      (item) =>
+        !(
+          item.productId.toString() === productId &&
+          item.color === color &&
+          item.size === size
+        )
     );
 
     await cart.save();
 
     await cart.populate({
       path: "items.productId",
-      select: "image title price salePrice",
+      select: "image colorImages title price salePrice",
     });
 
-    const populateCartItems = cart.items.map((item) => ({
-      productId: item.productId ? item.productId._id : null,
-      image: item.productId ? item.productId.image : null,
-      title: item.productId ? item.productId.title : "Product not found",
-      price: item.productId ? item.productId.price : null,
-      color: item.color ? item.color : null,
-      size: item.size ? item.size : null,
-      salePrice: item.productId ? item.productId.salePrice : null,
-      quantity: item.quantity,
-    }));
+    const populateCartItems = cart.items.map((item) => {
+      // Lấy ảnh theo màu
+      let imageUrl = item.productId ? item.productId.image : null;
+      if (item.color && item.productId && item.productId.colorImages) {
+        const colorImages = item.productId.colorImages;
+        if (colorImages instanceof Map) {
+          imageUrl = colorImages.get(item.color) || imageUrl;
+        } else if (typeof colorImages === "object" && colorImages[item.color]) {
+          imageUrl = colorImages[item.color];
+        }
+      }
+
+      return {
+        productId: item.productId ? item.productId._id : null,
+        image: imageUrl,
+        title: item.productId ? item.productId.title : "Product not found",
+        price: item.productId ? item.productId.price : null,
+        color: item.color ? item.color : null,
+        size: item.size ? item.size : null,
+        salePrice: item.productId ? item.productId.salePrice : null,
+        quantity: item.quantity,
+      };
+    });
 
     res.status(200).json({
       success: true,

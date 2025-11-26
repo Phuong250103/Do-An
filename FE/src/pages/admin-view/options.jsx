@@ -86,6 +86,11 @@ function AdminOptions() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+
+    console.log("=== SUBMIT CLICKED ===");
+    console.log("Selected Type:", selectedType);
+    console.log("Form Data:", formData);
+
     if (!formData.name || !formData.label) {
       toast({
         title: "Error",
@@ -95,37 +100,30 @@ function AdminOptions() {
       return;
     }
 
+    const payload = {
+      type: selectedType,
+      name: formData.name,
+      label: formData.label,
+    };
+
+    if (selectedType === "color") {
+      payload.code = formData.code;
+    }
+
+    console.log("Payload will send:", payload);
+
     if (editingItem) {
-      dispatch(
-        editOption({
-          type: selectedType,
-          id: editingItem._id,
-          name: formData.name,
-          label: formData.label,
-          code: formData.code,
-        })
-      ).then((data) => {
+      dispatch(editOption({ ...payload, id: editingItem._id })).then((data) => {
         if (data?.payload) {
-          toast({
-            title: "Item updated successfully",
-          });
+          toast({ title: "Item updated successfully" });
           setOpenDialog(false);
           dispatch(fetchOptions(selectedType));
         }
       });
     } else {
-      dispatch(
-        addOption({
-          type: selectedType,
-          name: formData.name,
-          label: formData.label,
-          code: formData.code,
-        })
-      ).then((data) => {
+      dispatch(addOption(payload)).then((data) => {
         if (data?.payload) {
-          toast({
-            title: "Item added successfully",
-          });
+          toast({ title: "Item added successfully" });
           setOpenDialog(false);
           setFormData({ name: "", label: "", code: "" });
           dispatch(fetchOptions(selectedType));
