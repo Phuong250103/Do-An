@@ -7,6 +7,7 @@ const adminProductRoute = require("./routes/admin/products-routes");
 const adminOptionsRoute = require("./routes/admin/options-routes");
 const shopProductRoute = require("./routes/shop/products-routes");
 const shopCartRoute = require("./routes/shop/cart-routes");
+const shopAddressRoute = require("./routes/shop/address-routes");
 
 const cron = require("node-cron");
 const Product = require("./models/Product");
@@ -105,7 +106,6 @@ cron.schedule("0 0 * * *", async () => {
           new Date(p.seasonEndDate).getDate()
         );
 
-        // Chỉ kiểm tra và sửa giá khi đã qua ngày endseason
         if (todayDate > seasonEndDateOnly) {
           const expectedSalePrice = Math.round(
             p.price * (1 - p.discountAfterSeason / 100)
@@ -131,6 +131,7 @@ app.use("/api/admin/products", adminProductRoute);
 app.use("/api/admin/options", adminOptionsRoute);
 app.use("/api/shop/products", shopProductRoute);
 app.use("/api/shop/cart", shopCartRoute);
+app.use("/api/shop/address", shopAddressRoute);
 
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
