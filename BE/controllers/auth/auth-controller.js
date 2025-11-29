@@ -96,6 +96,45 @@ const logoutUser = (req, res) => {
   });
 };
 
+const changePassword = async (req, res) => {
+  try {
+    const { oldPassword, newPassword } = req.body;
+    const userId = req.user.id;
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found!",
+      });
+    }
+
+    // kiểm tra mật khẩu cũ
+    const isMatch = await bcrypt.compare(oldPassword, user.password);
+    if (!isMatch) {
+      return res.json({
+        success: false,
+        message: "Old password is incorrect",
+      });
+    }
+
+    const hashed = await bcrypt.hash(newPassword, 12);
+    user.password = hashed;
+    await user.save();
+
+    return res.json({
+      success: true,
+      message: "Password updated successfully!",
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      success: false,
+      message: "Server error",
+    });
+  }
+};
+
 //auth middleware
 const authMiddleware = async (req, res, next) => {
   const token = req.cookies.token;
@@ -117,4 +156,10 @@ const authMiddleware = async (req, res, next) => {
   }
 };
 
-module.exports = { registerUser, loginUser, logoutUser, authMiddleware };
+module.exports = {
+  registerUser,
+  loginUser,
+  logoutUser,
+  changePassword,
+  authMiddleware,
+};
