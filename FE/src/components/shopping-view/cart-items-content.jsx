@@ -2,7 +2,11 @@ import { Minus, Plus } from "lucide-react";
 import { Button } from "../ui/button";
 import { Trash } from "lucide-react";
 import { useDispatch } from "react-redux";
-import { deleteCartItem, updateCartQuantity, fetchCartItems } from "@/store/shop/cart-slice";
+import {
+  deleteCartItem,
+  updateCartQuantity,
+  fetchCartItems,
+} from "@/store/shop/cart-slice";
 import { useSelector } from "react-redux";
 import { useToast } from "@/hooks/use-toast";
 import { useMemo, useState } from "react";
@@ -85,7 +89,9 @@ function UserCartItemsContent({ cartItems }) {
         {(cartItems?.color || cartItems?.size) && (
           <div className="text-sm text-muted-foreground mt-1">
             {cartItems?.color && <span>Color: {cartItems.color}</span>}
-            {cartItems?.color && cartItems?.size && <span className="mx-2">•</span>}
+            {cartItems?.color && cartItems?.size && (
+              <span className="mx-2">•</span>
+            )}
             {cartItems?.size && <span>Size: {cartItems.size}</span>}
           </div>
         )}
