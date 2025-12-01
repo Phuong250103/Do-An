@@ -8,6 +8,7 @@ import { Input } from "../ui/input";
 import { useDispatch, useSelector } from "react-redux";
 import { addToCart, fetchCartItems } from "@/store/shop/cart-slice";
 import { useToast } from "@/hooks/use-toast";
+import { setProductDetails } from "@/store/shop/products-slice";
 
 function ProductDetailsDialog({ open, setOpen, productDetails }) {
   const dispatch = useDispatch();
@@ -145,6 +146,7 @@ function ProductDetailsDialog({ open, setOpen, productDetails }) {
 
   function handleDialogClose() {
     setOpen(false);
+    dispatch(setProductDetails());
   }
 
   return (

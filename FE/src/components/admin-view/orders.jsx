@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Button } from "../ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Dialog } from "../ui/dialog";
@@ -10,15 +9,15 @@ import {
   TableHeader,
   TableRow,
 } from "../ui/table";
-import ShoppingOrderDetailsView from "./order-details";
+import { useState } from "react";
+import AdminOrderDetailsView from "./order-details";
 
-function ShopingOrders() {
+function AdminOrdersView() {
   const [openDetailsDialog, setOpenDetailsDialog] = useState(false);
-
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Order History</CardTitle>
+        <CardTitle>All Order</CardTitle>
       </CardHeader>
       <CardContent>
         <Table>
@@ -47,7 +46,7 @@ function ShopingOrders() {
                   <Button onClick={() => setOpenDetailsDialog(true)}>
                     View Details
                   </Button>
-                  <ShoppingOrderDetailsView />
+                  <AdminOrderDetailsView />
                 </Dialog>
               </TableCell>
             </TableRow>
@@ -58,4 +57,4 @@ function ShopingOrders() {
   );
 }
 
-export default ShopingOrders;
+export default AdminOrdersView;
