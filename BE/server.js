@@ -8,6 +8,7 @@ const adminOptionsRoute = require("./routes/admin/options-routes");
 const shopProductRoute = require("./routes/shop/products-routes");
 const shopCartRoute = require("./routes/shop/cart-routes");
 const shopAddressRoute = require("./routes/shop/address-routes");
+const shopOrderRouter = require("./routes/shop/order-routes");
 
 const cron = require("node-cron");
 const Product = require("./models/Product");
@@ -132,6 +133,7 @@ app.use("/api/admin/options", adminOptionsRoute);
 app.use("/api/shop/products", shopProductRoute);
 app.use("/api/shop/cart", shopCartRoute);
 app.use("/api/shop/address", shopAddressRoute);
+app.use("/api/shop/order", shopOrderRouter);
 
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);

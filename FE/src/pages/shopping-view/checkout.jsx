@@ -1,11 +1,25 @@
 import Address from "@/components/shopping-view/address";
 import img from "../../assets/Banner3.jpg";
 import UserCartItemsContent from "@/components/shopping-view/cart-items-content";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import { Button } from "@/components/ui/button";
+import { createNewOrder } from "@/store/shop/order-slice";
+import { useEffect } from "react";
 
 function ShoppingCheckout() {
-  const { cartItems } = useSelector((state) => state.shopCart);
+  const dispatch = useDispatch();
+  const { cartItems, cartId } = useSelector((state) => state.shopCart);
+  const { user } = useSelector((state) => state.auth);
+  const { addressList } = useSelector((state) => state.shopAddress);
+  const { isLoading, payUrl } = useSelector((state) => state.shopOrder);
+
+  // Redirect to MoMo when payUrl is ready
+  useEffect(() => {
+    if (payUrl) {
+      window.location.href = payUrl;
+    }
+  }, [payUrl]);
+
   const totalCartAmount =
     cartItems && cartItems.items && cartItems.items.length > 0
       ? cartItems.items.reduce(
@@ -18,6 +32,27 @@ function ShoppingCheckout() {
           0
         )
       : 0;
+
+  function handleInitiateMomo() {
+    // Get the first address (or implement address selection)
+    const addressInfo =
+      addressList && addressList.length > 0 ? addressList[0] : null;
+
+    if (!addressInfo) {
+      alert("Vui lòng thêm địa chỉ giao hàng!");
+      return;
+    }
+
+    const orderData = {
+      userId: user?.id,
+      cartId,
+      cartItems: cartItems?.items || [],
+      addressInfo,
+      totalAmount: totalCartAmount,
+    };
+
+    dispatch(createNewOrder(orderData));
+  }
 
   return (
     <div className="flex flex-col">
@@ -41,7 +76,13 @@ function ShoppingCheckout() {
             </div>
           </div>
           <div className="mt-4 w-full">
-            <Button className="w-full">Checkout with VNPAY</Button>
+            <Button
+              onClick={handleInitiateMomo}
+              className="w-full"
+              disabled={isLoading}
+            >
+              {isLoading ? "Đang xử lý..." : "Checkout with MOMO"}
+            </Button>
           </div>
         </div>
       </div>

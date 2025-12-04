@@ -16,6 +16,7 @@ import ShoppingListing from "./pages/shopping-view/listing.jsx";
 import ShoppingAccount from "./pages/shopping-view/account.jsx";
 import CheckAuth from "./components/common/check-auth.jsx";
 import UnauthPage from "./pages/unauth-page/index.jsx";
+import MOMOReturnPage from "./pages/shopping-view/momo-return.jsx";
 import { useSelector, useDispatch } from "react-redux";
 import { use, useEffect } from "react";
 import { checkAuth } from "./store/auth-slice/index.js";
@@ -75,6 +76,7 @@ function App() {
           <Route path="listing" element={<ShoppingListing />} />
           <Route path="checkout" element={<ShoppingCheckout />} />
           <Route path="account" element={<ShoppingAccount />} />
+          <Route path="momo-return" element={<MOMOReturnPage />} />
         </Route>
         <Route path="/unauth-page" element={<UnauthPage />} />
         <Route path="*" element={<NotFound />} />
