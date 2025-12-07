@@ -10,7 +10,7 @@ const {
 const router = express.Router();
 
 router.post("/create", createOrder);
-router.get("/momo_callback", handleMomoCallback);
+router.get("/momo-callback", handleMomoCallback);
 router.get("/list/:userId", getAllOrdersByUser);
 router.get("/details/:id", getOrderDetails);
 

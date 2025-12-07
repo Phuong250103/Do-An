@@ -4,7 +4,7 @@ import UserCartItemsContent from "@/components/shopping-view/cart-items-content"
 import { useSelector, useDispatch } from "react-redux";
 import { Button } from "@/components/ui/button";
 import { createNewOrder } from "@/store/shop/order-slice";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 function ShoppingCheckout() {
   const dispatch = useDispatch();
@@ -13,6 +13,9 @@ function ShoppingCheckout() {
   const { addressList } = useSelector((state) => state.shopAddress);
   const { isLoading, payUrl } = useSelector((state) => state.shopOrder);
 
+  const [selectedAddress, setSelectedAddress] = useState(null);
+  const [selectedProducts, setSelectedProducts] = useState([]);
+
   // Redirect to MoMo when payUrl is ready
   useEffect(() => {
     if (payUrl) {
@@ -20,34 +23,44 @@ function ShoppingCheckout() {
     }
   }, [payUrl]);
 
+  const handleSelectProduct = (product, idx) => {
+    const exists = selectedProducts.find((p) => p._idx === idx);
+
+    if (exists) {
+      setSelectedProducts(selectedProducts.filter((p) => p._idx !== idx));
+    } else {
+      // store index to uniquely identify this item in the list
+      setSelectedProducts([...selectedProducts, { ...product, _idx: idx }]);
+    }
+  };
+
   const totalCartAmount =
-    cartItems && cartItems.items && cartItems.items.length > 0
-      ? cartItems.items.reduce(
-          (sum, currentItem) =>
+    selectedProducts.length > 0
+      ? selectedProducts.reduce(
+          (sum, item) =>
             sum +
-            (currentItem?.salePrice > 0
-              ? currentItem?.salePrice
-              : currentItem?.price) *
-              currentItem?.quantity,
+            (item?.salePrice > 0 ? item.salePrice : item.price) * item.quantity,
           0
         )
       : 0;
 
   function handleInitiateMomo() {
-    // Get the first address (or implement address selection)
-    const addressInfo =
-      addressList && addressList.length > 0 ? addressList[0] : null;
+    // Need at least one product selected and one address
+    if (!selectedAddress) {
+      alert("Vui lòng chọn địa chỉ giao hàng!");
+      return;
+    }
 
-    if (!addressInfo) {
-      alert("Vui lòng thêm địa chỉ giao hàng!");
+    if (!selectedProducts || selectedProducts.length === 0) {
+      alert("Vui lòng chọn sản phẩm để thanh toán!");
       return;
     }
 
     const orderData = {
       userId: user?.id,
       cartId,
-      cartItems: cartItems?.items || [],
-      addressInfo,
+      cartItems: selectedProducts,
+      addressInfo: selectedAddress,
       totalAmount: totalCartAmount,
     };
 
@@ -60,13 +73,41 @@ function ShoppingCheckout() {
         <img src={img} className="h-full w-full object-cover object-center" />
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mt-5 p-5">
-        <Address />
+        <Address
+          setCurrentSelectedAddress={setSelectedAddress}
+          selectedId={selectedAddress}
+        />
         <div className="flex flex-col gap-4">
-          {cartItems && cartItems.items && cartItems.items.length > 0
-            ? cartItems.items.map((item) => (
-                <UserCartItemsContent cartItems={item} />
-              ))
-            : null}
+          {cartItems?.items?.length > 0 &&
+            cartItems.items.map((item, idx) => {
+              const isSelected = selectedProducts.some((p) => p._idx === idx);
+              return (
+                <div
+                  key={`${item.productId || "item"}-${idx}`}
+                  className={`flex gap-2 items-center p-3 rounded transition-all cursor-pointer ${
+                    isSelected
+                      ? "border-2 border-blue-500 bg-blue-50"
+                      : "border border-transparent hover:border-gray-300"
+                  }`}
+                  onClick={() => handleSelectProduct(item, idx)}
+                >
+                  <input
+                    type="checkbox"
+                    checked={isSelected}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleSelectProduct(item, idx);
+                    }}
+                    readOnly
+                    className="w-4 h-4 flex-shrink-0"
+                  />
+                  <div className="flex-1">
+                    <UserCartItemsContent cartItems={item} />
+                  </div>
+                </div>
+              );
+            })}
+
           <div className="mt-8 space-y-4">
             <div className="flex justify-between">
               <span className="font-bold">Total</span>

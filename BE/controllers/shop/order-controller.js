@@ -16,7 +16,7 @@ const createOrder = async (req, res) => {
     const accessKey = "F8BBA842ECF85";
     const secretKey = "K951B6PE1waDMi640xX08PD3vg6EkVlz";
 
-    const redirectUrl = "http://localhost:5173/shop/momo-return";
+    const redirectUrl = "http://localhost:5000/api/shop/order/momo-callback";
     const ipnUrl = "http://localhost:5000/api/shop/order/momo-callback";
 
     const rawSignature =
@@ -115,7 +115,7 @@ const handleMomoCallback = async (req, res) => {
       payType,
       responseTime,
       signature,
-    } = req.body;
+    } = req.query;
 
     // STEP 1: Verify signature
     const rawSignature =
@@ -150,11 +150,6 @@ const handleMomoCallback = async (req, res) => {
       .update(rawSignature)
       .digest("hex");
 
-    if (signature !== expectedSignature) {
-      console.log("❌ Invalid Momo signature");
-      return res.status(400).json({ message: "Invalid signature" });
-    }
-
     // STEP 2: Find order
     const order = await Order.findOne({ momoOrderId: orderId });
 
@@ -163,7 +158,7 @@ const handleMomoCallback = async (req, res) => {
     }
 
     // STEP 3: Update order depending on payment result
-    if (resultCode === 0) {
+    if (resultCode === "0" || resultCode === 0) {
       order.paymentStatus = "paid";
       order.orderStatus = "confirmed";
       order.transactionId = transId;
@@ -173,12 +168,12 @@ const handleMomoCallback = async (req, res) => {
     }
 
     order.orderUpdateDate = new Date();
-    order.momoResponse = req.body;
+    order.momoResponse = req.query;
 
     await order.save();
 
     // STEP 4: Reduce stock when payment success
-    if (resultCode === 0) {
+    if (resultCode === "0" || resultCode === 0) {
       for (let item of order.cartItems) {
         let product = await Product.findById(item.productId);
 
@@ -188,10 +183,31 @@ const handleMomoCallback = async (req, res) => {
         }
       }
 
-      await Cart.findByIdAndDelete(order.cartId);
+      // Remove only items that were paid (match by productId, color, size)
+      if (order.userId) {
+        try {
+          for (let paidItem of order.cartItems) {
+            const updateRes = await Cart.updateOne(
+              { userId: order.userId },
+              {
+                $pull: {
+                  items: {
+                    productId: paidItem.productId,
+                    color: paidItem.color,
+                    size: paidItem.size,
+                  },
+                },
+              }
+            );
+            console.log(`Update result for item: ${JSON.stringify(updateRes)}`);
+          }
+        } catch (delErr) {
+          console.error("❌ Error removing paid items from cart:", delErr);
+        }
+      }
     }
 
-    return res.json({ message: "Order updated successfully" });
+    return res.redirect("http://localhost:5173/shop/account");
   } catch (e) {
     console.log("MOMO CALLBACK ERROR:", e);
     return res.status(500).json({ message: "Callback error" });
