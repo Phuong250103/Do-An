@@ -9,10 +9,11 @@ const initialState = {
 
 export const fetchAllFilteredProducts = createAsyncThunk(
   "/products/fetchAllProducts",
-  async () => {
-    const result = await axios.get(
-      `http://localhost:5000/api/shop/products/get`
-    );
+  async (query = "") => {
+    const url = query
+      ? `http://localhost:5000/api/shop/products/get?${query}`
+      : `http://localhost:5000/api/shop/products/get`;
+    const result = await axios.get(url);
 
     return result?.data;
   }

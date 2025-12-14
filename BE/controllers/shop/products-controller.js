@@ -69,21 +69,19 @@ const calculateSeasonalPrice = (product) => {
 
 const getFilteredProducts = async (req, res) => {
   try {
-    // const { category = [], brand = [], sortBy = "price-lowtohigh" } = req.query;
+    const { category, brand } = req.query;
 
-    // let filters = {};
+    let filters = {};
 
-    // if (category.length) {
-    //   filters.category = { $in: category.split(",") };
-    // }
+    if (category) {
+      filters.category = { $in: category.split(",") };
+    }
 
-    // if (brand.length) {
-    //   filters.brand = { $in: brand.split(",") };
-    // }
+    if (brand) {
+      filters.brand = { $in: brand.split(",") };
+    }
 
-    // let sort = {};
-
-    const products = await Product.find({});
+    const products = await Product.find(filters);
 
     // Tính toán giá động cho từng sản phẩm
     const productsWithCalculatedPrice = products.map((product) =>
