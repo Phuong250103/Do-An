@@ -19,6 +19,7 @@ import {
 import ProductDetailsDialog from "@/components/shopping-view/product-details";
 import { addToCart, fetchCartItems } from "@/store/shop/cart-slice";
 import { useToast } from "@/hooks/use-toast";
+import { Input } from "@/components/ui/input";
 
 function ShoppingListing() {
   const dispatch = useDispatch();
@@ -29,18 +30,33 @@ function ShoppingListing() {
   const { cartItems } = useSelector((state) => state.shopCart);
   const [openDetailsDialog, setOpenDetailsDialog] = useState(false);
   const { toast } = useToast();
+  const [search, setSearch] = useState("");
 
   const [sort, setSort] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
 
-  const sortedProducts = useMemo(() => {
+  const filteredProducts = useMemo(() => {
     if (!productList) return [];
-    const sorted = [...productList];
+    let filtered = [...productList];
+
+    if (search.trim()) {
+      filtered = filtered.filter(
+        (product) =>
+          product.title?.toLowerCase().includes(search.toLowerCase()) ||
+          product.description?.toLowerCase().includes(search.toLowerCase())
+      );
+    }
+
+    return filtered;
+  }, [search, productList]);
+
+  const sortedProducts = useMemo(() => {
+    const sorted = [...filteredProducts];
     const selectedOption = sortOptions.find((opt) => opt.id === sort);
     if (selectedOption?.compareFn) sorted.sort(selectedOption.compareFn);
     return sorted;
-  }, [sort, productList]);
+  }, [sort, filteredProducts]);
 
   const totalPages = Math.ceil((sortedProducts?.length || 0) / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -90,15 +106,24 @@ function ShoppingListing() {
         <div className="p-4 border-b flex items-center justify-between">
           <h2 className="text-lg font-extrabold">All Products</h2>
           <div className="flex items-center gap-3">
+            <Input
+              placeholder="Search products..."
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="w-[200px] rounded-2xl h-8"
+            />
             <span className="text-muted-foreground">
-              {productList?.length} Products
+              {sortedProducts?.length} Products
             </span>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="outline"
                   size="sm"
-                  className="flex items-center gap-1"
+                  className="flex items-center gap-1 h-8"
                 >
                   <ArrowUpDownIcon className="h-4 w-4" />
                   <span>Sort by</span>
