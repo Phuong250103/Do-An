@@ -9,11 +9,54 @@ import { useDispatch, useSelector } from "react-redux";
 import { addToCart, fetchCartItems } from "@/store/shop/cart-slice";
 import { useToast } from "@/hooks/use-toast";
 import { setProductDetails } from "@/store/shop/products-slice";
+import { Label } from "../ui/label";
+import StarRatingComponent from "../common/star-rating";
+import { addReview, getReviews } from "@/store/shop/review-slice";
 
 function ProductDetailsDialog({ open, setOpen, productDetails }) {
+  const [reviewMsg, setReviewMsg] = useState("");
+  const [rating, setRating] = useState(0);
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
+  const { reviews } = useSelector((state) => state.shopReview);
   const { toast } = useToast();
+
+  function handleRatingChange(getRating) {
+    setRating(getRating);
+  }
+
+  function handleAddReview() {
+    dispatch(
+      addReview({
+        productId: productDetails?._id,
+        userId: user?.id,
+        userName: user?.userName,
+        reviewMessage: reviewMsg,
+        reviewValue: rating,
+      })
+    ).then((data) => {
+      if (data.payload.success) {
+        setRating(0);
+        setReviewMsg("");
+        dispatch(getReviews(productDetails?._id));
+        toast({
+          title: "Review added successfully!",
+        });
+      }
+      if (!data.payload.success && data.payload.code === "PURCHASE_REQUIRED") {
+        toast({
+          description: "You need to purchase product to review it.",
+          variant: "destructive",
+        });
+      }
+      if (!data.payload.success && data.payload.code === "REVIEW_EXISTS") {
+        toast({
+          description: "You already reviewed this product!",
+          variant: "destructive",
+        });
+      }
+    });
+  }
 
   function handleAddtoCart(getCurrentProductId) {
     if (!selectedColor || !selectedSize) {
@@ -147,7 +190,19 @@ function ProductDetailsDialog({ open, setOpen, productDetails }) {
   function handleDialogClose() {
     setOpen(false);
     dispatch(setProductDetails());
+    setRating(0);
+    setReviewMsg("");
   }
+
+  useEffect(() => {
+    if (productDetails !== null) dispatch(getReviews(productDetails?._id));
+  }, [productDetails]);
+
+  const averageReview =
+    reviews && reviews.length > 0
+      ? reviews.reduce((sum, reviewItem) => sum + reviewItem.reviewValue, 0) /
+        reviews.length
+      : 0;
 
   return (
     <Dialog open={open} onOpenChange={handleDialogClose}>
@@ -255,27 +310,25 @@ function ProductDetailsDialog({ open, setOpen, productDetails }) {
 
           <div className="flex items-center justify-between">
             <p
-              className={`text-3xl font-bold text-primary ${
+              className={`text-xl font-bold text-primary ${
                 productDetails?.salePrice > 0 ? "line-through" : ""
               }`}
             >
               {productDetails?.price.toLocaleString("vi-VN")} VND
             </p>
             {productDetails?.salePrice > 0 ? (
-              <p className="text-2xl font-bold text-muted-foreground">
+              <p className="text-xl font-bold text-muted-foreground">
                 {productDetails?.salePrice?.toLocaleString("vi-VN")} VND
               </p>
             ) : null}
           </div>
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-2">
-              <StarIcon className="w-4 h-4 fill-yellow-500 text-yellow-500" />
-              <StarIcon className="w-4 h-4 fill-yellow-500 text-yellow-500" />
-              <StarIcon className="w-4 h-4 fill-yellow-500 text-yellow-500" />
-              <StarIcon className="w-4 h-4 fill-yellow-500 text-yellow-500" />
-              <StarIcon className="w-4 h-4 fill-yellow-500 text-yellow-500" />
+              <StarRatingComponent rating={averageReview} />
             </div>
-            <span className="text-sm text-yellow-500">(4.5)</span>
+            <span className="text-sm text-yellow-500">
+              ({averageReview.toFixed(1)})
+            </span>
           </div>
           <div>
             <Button
@@ -290,32 +343,51 @@ function ProductDetailsDialog({ open, setOpen, productDetails }) {
           <div className="max-h-[120px] overflow-auto">
             <h2 className="text-xl font-bold mb-4"> Reviews </h2>
             <div className="grid gap-6">
-              <div className="flex gap-4">
-                <Avatar className="w-10 h-10 border">
-                  <AvatarFallback>P</AvatarFallback>
-                </Avatar>
-                <div className="grid gap-1">
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-bold">PhuongDD</h3>
+              {reviews && reviews.length > 0 ? (
+                reviews.map((reviewItem) => (
+                  <div className="flex gap-4">
+                    <Avatar className="w-10 h-10 border">
+                      <AvatarFallback>
+                        {reviewItem?.userName[0].toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="grid gap-1">
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-bold">{reviewItem?.userName}</h3>
+                      </div>
+                      <div className="flex items-center gap-0.5">
+                        <StarRatingComponent rating={reviewItem?.reviewValue} />
+                      </div>
+                      <p className="text-muted-foreground">
+                        {reviewItem.reviewMessage}
+                      </p>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <StarIcon className="w-4 h-4 fill-yellow-500 text-yellow-500" />
-                    <StarIcon className="w-4 h-4 fill-yellow-500 text-yellow-500" />
-                    <StarIcon className="w-4 h-4 fill-yellow-500 text-yellow-500" />
-                    <StarIcon className="w-4 h-4 fill-yellow-500 text-yellow-500" />
-                    <StarIcon className="w-4 h-4 fill-yellow-500 text-yellow-500" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500">
-                      This is an amazing product
-                    </p>
-                  </div>
-                </div>
-              </div>
+                ))
+              ) : (
+                <h1>No Reviews</h1>
+              )}
             </div>
-            <div className="mt-4 flex gap-2">
-              <Input type="text" placeholder="Write a review ...." />
-              <Button>Submit</Button>
+            <div className="mt-4 flex flex-col gap-2">
+              <Label>Write a review</Label>
+              <div className="flex">
+                <StarRatingComponent
+                  rating={rating}
+                  handleRatingChange={handleRatingChange}
+                />
+              </div>
+              <Input
+                name="reviewMsg"
+                value={reviewMsg}
+                onChange={(event) => setReviewMsg(event.target.value)}
+                placeholder="Write a review ...."
+              />
+              <Button
+                onClick={handleAddReview}
+                disabled={reviewMsg.trim() === ""}
+              >
+                Submit
+              </Button>
             </div>
           </div>
         </div>

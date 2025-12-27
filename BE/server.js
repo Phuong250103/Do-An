@@ -13,6 +13,7 @@ const shopCartRoute = require("./routes/shop/cart-routes");
 const shopAddressRoute = require("./routes/shop/address-routes");
 const shopOrderRouter = require("./routes/shop/order-routes");
 const shopSearchRouter = require("./routes/shop/search-routes");
+const shopReviewRouter = require("./routes/shop/review-routes");
 
 const cron = require("node-cron");
 const Product = require("./models/Product");
@@ -142,6 +143,7 @@ app.use("/api/shop/cart", shopCartRoute);
 app.use("/api/shop/address", shopAddressRoute);
 app.use("/api/shop/order", shopOrderRouter);
 app.use("/api/shop/search", shopSearchRouter);
+app.use("/api/shop/review", shopReviewRouter);
 
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
