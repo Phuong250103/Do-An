@@ -20,17 +20,23 @@ function AuthRegister() {
 
   function onSubmit(event) {
     event.preventDefault();
-    dispatch(registerUser(formData)).then((data) => {
-      if (data?.payload?.success) {
+
+    dispatch(registerUser(formData)).then((action) => {
+      if (registerUser.rejected.match(action)) {
         toast({
-          title: data?.payload?.message,
-        });
-        navigate("/auth/login");
-      } else {
-        toast({
-          title: data?.payload?.message,
+          title: "Error",
+          description: action.payload,
           variant: "destructive",
         });
+        return;
+      }
+
+      if (action.payload?.success) {
+        toast({
+          title: "Success",
+          description: action.payload.message,
+        });
+        navigate("/auth/login");
       }
     });
   }

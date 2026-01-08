@@ -66,13 +66,17 @@ const addProduct = async (req, res) => {
 
     if (seasonEndDate) {
       // So sánh ngày (không tính giờ phút giây) để chính xác
-      const todayDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const todayDate = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate()
+      );
       const seasonEndDateOnly = new Date(
         seasonEndDate.getFullYear(),
         seasonEndDate.getMonth(),
         seasonEndDate.getDate()
       );
-      
+
       // Chỉ áp dụng giảm giá khi ngày hiện tại > ngày kết thúc mùa (phải qua ngày endseason)
       if (todayDate > seasonEndDateOnly) {
         // mùa đã hết → áp dụng giảm giá
@@ -93,7 +97,8 @@ const addProduct = async (req, res) => {
     if (!variants || !Array.isArray(variants) || variants.length === 0) {
       return res.status(400).json({
         success: false,
-        message: "Vui lòng thêm ít nhất một biến thể (màu, kích thước, số lượng)",
+        message:
+          "Vui lòng thêm ít nhất một biến thể (màu, kích thước, số lượng)",
       });
     }
 
@@ -135,7 +140,11 @@ const calculateSeasonalPrice = (product) => {
 
   if (productData.seasonEndDate) {
     // So sánh ngày (không tính giờ phút giây) để chính xác
-    const todayDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const todayDate = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate()
+    );
     const seasonEndDateOnly = new Date(
       new Date(productData.seasonEndDate).getFullYear(),
       new Date(productData.seasonEndDate).getMonth(),
@@ -252,7 +261,7 @@ const editProduct = async (req, res) => {
           break;
         case "summer":
           seasonEndDate = new Date(year, 7, 31); // 31/08
-          break;  
+          break;
         case "autumn":
           seasonEndDate = new Date(year, 10, 30); // 30/11
           break;
@@ -278,7 +287,7 @@ const editProduct = async (req, res) => {
       findProduct.colorImages = colorImages;
     }
     findProduct.averageReview = averageReview || findProduct.averageReview;
-    
+
     // Cập nhật variants
     if (variants && Array.isArray(variants) && variants.length > 0) {
       findProduct.variants = variants;
@@ -286,17 +295,21 @@ const editProduct = async (req, res) => {
       // Nếu variants là mảng rỗng, không cho phép
       return res.status(400).json({
         success: false,
-        message: "Vui lòng thêm ít nhất một biến thể (màu, kích thước, số lượng)",
+        message:
+          "Vui lòng thêm ít nhất một biến thể (màu, kích thước, số lượng)",
       });
     }
     if (discountAfterSeason !== undefined) {
       findProduct.discountAfterSeason = discountAfterSeason;
     }
 
-
     const now = new Date();
     if (findProduct.seasonEndDate) {
-      const todayDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const todayDate = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate()
+      );
       const seasonEndDateOnly = new Date(
         new Date(findProduct.seasonEndDate).getFullYear(),
         new Date(findProduct.seasonEndDate).getMonth(),
@@ -329,10 +342,10 @@ const editProduct = async (req, res) => {
     }
 
     await findProduct.save();
-    
+
     // Tính toán giá cuối cùng trước khi trả về
     const finalProduct = calculateSeasonalPrice(findProduct);
-    
+
     res.status(200).json({
       success: true,
       data: finalProduct,

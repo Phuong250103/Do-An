@@ -9,6 +9,8 @@ import {
 } from "../ui/select";
 import { Textarea } from "../ui/textarea";
 import { Button } from "../ui/button";
+import { Eye, EyeOff } from "lucide-react";
+import { useState } from "react";
 
 function CommonForm({
   formControls,
@@ -18,6 +20,7 @@ function CommonForm({
   buttonText,
   isBtnDisabled,
 }) {
+  const [showPassword, setShowPassword] = useState(false);
   function renderInputsByComponentType(getControlItem) {
     let element = null;
     const value = formData[getControlItem.name] || "";
@@ -84,6 +87,34 @@ function CommonForm({
           />
         );
 
+        break;
+      case "password":
+        element = (
+          <div className="relative">
+            <Input
+              name={getControlItem.name}
+              placeholder={getControlItem.placeholder}
+              id={getControlItem.name}
+              type={showPassword ? "text" : "password"}
+              value={value}
+              onChange={(event) =>
+                setFormData({
+                  ...formData,
+                  [getControlItem.name]: event.target.value,
+                })
+              }
+              className="pr-10"
+            />
+
+            <button
+              type="button"
+              onClick={() => setShowPassword((prev) => !prev)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            >
+              {showPassword ? <Eye size={18} /> : <EyeOff size={18} />}
+            </button>
+          </div>
+        );
         break;
 
       default:

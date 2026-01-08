@@ -1,4 +1,4 @@
-import { Route, Routes } from "react-router-dom";
+import { Route, Routes, Navigate } from "react-router-dom";
 import AuthRegister from "./pages/auth/register.jsx";
 import AuthLayout from "./components/auth/layout";
 import AuthLogin from "./pages/auth/login";
@@ -39,6 +39,7 @@ function App() {
   return (
     <div className="flex flex-col overflow-hidden bg-white">
       <Routes>
+        <Route path="/" element={<Navigate to="/auth/login" replace />} />
         <Route
           path="/auth"
           element={

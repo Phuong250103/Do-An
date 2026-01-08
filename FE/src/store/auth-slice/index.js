@@ -9,17 +9,22 @@ const initialState = {
 
 export const registerUser = createAsyncThunk(
   "/auth/register",
+  async (formData, { rejectWithValue }) => {
+    try {
+      const res = await axios.post(
+        "http://localhost:5000/api/auth/register",
+        formData,
+        {
+          withCredentials: true,
+        }
+      );
 
-  async (formData) => {
-    const response = await axios.post(
-      "http://localhost:5000/api/auth/register",
-      formData,
-      {
-        withCredentials: true,
-      }
-    );
-
-    return response.data;
+      return res.data;
+    } catch (err) {
+      return rejectWithValue(
+        err.response?.data?.message || "Something went wrong"
+      );
+    }
   }
 );
 

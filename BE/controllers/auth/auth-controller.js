@@ -6,10 +6,21 @@ const User = require("../../models/User");
 const registerUser = async (req, res) => {
   const { userName, email, password } = req.body;
 
+  const passwordRegex =
+    /^(?=.*[A-Z])(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,}$/;
+
+  if (!passwordRegex.test(password)) {
+    return res.status(400).json({
+      success: false,
+      message:
+        "Password must be at least 8 characters, include 1 uppercase letter and 1 special character",
+    });
+  }
+
   try {
     const checkUser = await User.findOne({ email });
     if (checkUser)
-      return res.json({
+      return res.status(400).json({
         success: false,
         message: "User Already exists with the same email! Please try again",
       });
@@ -109,12 +120,22 @@ const changePassword = async (req, res) => {
       });
     }
 
-    // kiểm tra mật khẩu cũ
     const isMatch = await bcrypt.compare(oldPassword, user.password);
     if (!isMatch) {
-      return res.json({
+      return res.status(400).json({
         success: false,
         message: "Old password is incorrect",
+      });
+    }
+
+    const passwordRegex =
+      /^(?=.*[A-Z])(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,}$/;
+
+    if (!passwordRegex.test(newPassword)) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Password must be at least 8 characters, include 1 uppercase letter and 1 special character",
       });
     }
 
