@@ -82,9 +82,10 @@ function ShoppingOrders() {
                           orderItem?.orderStatus === "confirmed" ||
                           orderItem?.orderStatus === "delivered"
                             ? "bg-green-500"
-                            : orderItem?.orderStatus === "rejected"
+                            : orderItem?.orderStatus === "rejected" ||
+                              orderItem?.orderStatus === "cancelled"
                             ? "bg-red-600"
-                            : "bg-black"
+                            : "bg-yellow-400"
                         }`}
                       >
                         {orderItem?.orderStatus}

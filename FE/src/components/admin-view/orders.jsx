@@ -52,6 +52,7 @@ function AdminOrdersView() {
           <TableHeader>
             <TableRow>
               <TableHead>Order ID</TableHead>
+              <TableHead>Order Items </TableHead>
               <TableHead>Order Date</TableHead>
               <TableHead>Order Status</TableHead>
               <TableHead>Order Price</TableHead>
@@ -65,6 +66,13 @@ function AdminOrdersView() {
               ? paginatedOrders.map((orderItem) => (
                   <TableRow>
                     <TableCell>{orderItem?._id}</TableCell>
+                    <TableCell>
+                      <div className="text-sm text-gray-600">
+                        {orderItem?.cartItems?.[0]?.title}
+                        {orderItem?.cartItems?.length > 1 &&
+                          ` +${orderItem.cartItems.length - 1} products`}
+                      </div>
+                    </TableCell>
                     <TableCell>{orderItem?.orderDate.split("T")[0]}</TableCell>
                     <TableCell>
                       <Badge
@@ -72,9 +80,10 @@ function AdminOrdersView() {
                           orderItem?.orderStatus === "confirmed" ||
                           orderItem?.orderStatus === "delivered"
                             ? "bg-green-500"
-                            : orderItem?.orderStatus === "rejected"
+                            : orderItem?.orderStatus === "rejected" ||
+                              orderItem?.orderStatus === "cancelled"
                             ? "bg-red-600"
-                            : "bg-black"
+                            : "bg-yellow-400"
                         }`}
                       >
                         {orderItem?.orderStatus}

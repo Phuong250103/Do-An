@@ -396,19 +396,32 @@ function AdminDashboard() {
                       Order #{order._id?.slice(-6)}
                     </p>
                     <p className="text-sm text-gray-600">
-                      {order.orderDate.split("T")[0]}
+                      {order.orderDate?.split("T")[0]}
                     </p>
+
+                    <div className="mt-1 space-y-0.5">
+                      <p className="text-sm text-gray-500">
+                        {order.cartItems
+                          ?.map((item) =>
+                            item.quantity > 1
+                              ? `${item.title} x${item.quantity}`
+                              : item.title
+                          )
+                          .join(", ")}
+                      </p>
+                    </div>
                   </div>
+
                   <div className="text-right">
                     <p className="font-bold text-gray-900">
-                      {(order.totalAmount || 0).toLocaleString("vi-VN")} VND
+                      {(order.totalAmount ?? 0).toLocaleString("vi-VN")} VND
                     </p>
+
                     <span
                       className={`text-xs px-2 py-1 rounded-full ${
-                        order.orderStatus === "confirmed"
+                        order.orderStatus === "confirmed" ||
+                        order.orderStatus === "delivered"
                           ? "bg-green-100 text-green-700"
-                          : order.orderStatus === "delivered"
-                          ? "bg-blue-100 text-blue-700"
                           : "bg-yellow-100 text-yellow-700"
                       }`}
                     >
@@ -421,6 +434,7 @@ function AdminDashboard() {
                   </div>
                 </div>
               ))}
+
             {orderList?.length === 0 && (
               <p className="text-gray-500 text-center py-4">Chưa có đơn hàng</p>
             )}
