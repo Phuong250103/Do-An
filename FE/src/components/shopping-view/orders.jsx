@@ -16,6 +16,7 @@ import {
   getAllOrdersByUserId,
   getOrderDetails,
   resetOrderDetails,
+  cancelOrder,
 } from "@/store/shop/order-slice";
 import { Badge } from "../ui/badge";
 
@@ -33,6 +34,12 @@ function ShoppingOrders() {
 
   function handleFetchOrderDetails(getId) {
     dispatch(getOrderDetails(getId));
+  }
+
+  function handleCancelOrder(orderId) {
+    if (window.confirm("Are you sure you want to cancel this order?")) {
+      dispatch(cancelOrder(orderId));
+    }
   }
 
   useEffect(() => {
@@ -72,7 +79,8 @@ function ShoppingOrders() {
                     <TableCell>
                       <Badge
                         className={`py-1 px-3 ${
-                          orderItem?.orderStatus === "confirmed"
+                          orderItem?.orderStatus === "confirmed" ||
+                          orderItem?.orderStatus === "delivered"
                             ? "bg-green-500"
                             : orderItem?.orderStatus === "rejected"
                             ? "bg-red-600"
@@ -86,22 +94,37 @@ function ShoppingOrders() {
                       {orderItem?.totalAmount.toLocaleString("vi-VN")} VND
                     </TableCell>
                     <TableCell>
-                      <Dialog
-                        open={openDetailsDialog}
-                        onOpenChange={() => {
-                          setOpenDetailsDialog(false);
-                          dispatch(resetOrderDetails());
-                        }}
-                      >
-                        <Button
-                          onClick={() =>
-                            handleFetchOrderDetails(orderItem?._id)
-                          }
+                      <div className="flex gap-2">
+                        <Dialog
+                          open={openDetailsDialog}
+                          onOpenChange={() => {
+                            setOpenDetailsDialog(false);
+                            dispatch(resetOrderDetails());
+                          }}
                         >
-                          View Details
+                          <Button
+                            onClick={() =>
+                              handleFetchOrderDetails(orderItem?._id)
+                            }
+                          >
+                            View Details
+                          </Button>
+                          <ShoppingOrderDetailsView
+                            orderDetails={orderDetails}
+                          />
+                        </Dialog>
+                        <Button
+                          onClick={() => handleCancelOrder(orderItem?._id)}
+                          disabled={
+                            orderItem?.orderStatus === "delivered" ||
+                            orderItem?.orderStatus === "cancelled" ||
+                            orderItem?.orderStatus === "shipping"
+                          }
+                          variant="destructive"
+                        >
+                          Cancel
                         </Button>
-                        <ShoppingOrderDetailsView orderDetails={orderDetails} />
-                      </Dialog>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))

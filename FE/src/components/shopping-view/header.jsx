@@ -89,6 +89,7 @@ function HeaderRightContent() {
 
   function handleLogout() {
     dispatch(logoutUser());
+    window.location.reload();
   }
 
   useEffect(() => {

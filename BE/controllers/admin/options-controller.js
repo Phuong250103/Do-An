@@ -72,11 +72,13 @@ const addOption = async (req, res) => {
     }
 
     // Check if option already exists
-    const existingOption = await Model.findOne({ name });
+    const existingOption = await Model.findOne({
+      $or: [{ name }, { label }],
+    });
     if (existingOption) {
       return res.status(400).json({
         success: false,
-        message: `${type} with this name already exists`,
+        message: `${type} with this name or label already exists`,
       });
     }
 

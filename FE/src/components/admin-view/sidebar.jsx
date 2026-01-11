@@ -8,6 +8,7 @@ import {
 import { Fragment } from "react";
 import { useNavigate } from "react-router-dom";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "../ui/sheet";
+import { NavLink } from "react-router-dom";
 
 const adminSidebarMenuItems = [
   {
@@ -42,17 +43,22 @@ function MenuItems({ setOpen }) {
   return (
     <nav className="mt-8 flex-col flex gap-2">
       {adminSidebarMenuItems.map((menuItem) => (
-        <div
+        <NavLink
           key={menuItem.id}
-          onClick={() => {
-            navigate(menuItem.path);
-            setOpen ? setOpen(false) : null;
-          }}
-          className="flex cursor-pointer text-xl items-center gap-2 rounded-md px-3 py-2 text-muted-foreground hover:bg-muted hover:text-foreground"
+          to={menuItem.path}
+          onClick={() => setOpen && setOpen(false)}
+          className={({ isActive }) =>
+            `flex cursor-pointer text-xl items-center gap-2 rounded-md px-3 py-2 transition
+             ${
+               isActive
+                 ? "bg-muted text-foreground font-bold"
+                 : "text-muted-foreground hover:bg-muted hover:text-foreground"
+             }`
+          }
         >
           {menuItem.icon}
           <span>{menuItem.label}</span>
-        </div>
+        </NavLink>
       ))}
     </nav>
   );

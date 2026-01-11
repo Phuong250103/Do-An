@@ -261,9 +261,63 @@ const getOrderDetails = async (req, res) => {
   }
 };
 
+const cancelOrder = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const order = await Order.findById(id);
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: "Order not found!",
+      });
+    }
+
+    if (order.orderStatus !== "pending" && order.orderStatus !== "confirmed") {
+      return res.status(400).json({
+        success: false,
+        message: "Cannot cancel order with status: " + order.orderStatus,
+      });
+    }
+
+    order.orderStatus = "cancelled";
+    order.orderUpdateDate = new Date();
+    await order.save();
+
+    if (order.paymentStatus === "paid") {
+      for (let item of order.cartItems) {
+        let product = await Product.findById(item.productId);
+
+        if (product && product.variants) {
+          const variant = product.variants.find(
+            (v) => v.color === item.color && v.size === item.size
+          );
+          if (variant) {
+            variant.quantity += item.quantity;
+            await product.save();
+          }
+        }
+      }
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Order cancelled successfully",
+      data: order,
+    });
+  } catch (e) {
+    console.log(e);
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+    });
+  }
+};
+
 module.exports = {
   createOrder,
   handleMomoCallback,
   getAllOrdersByUser,
   getOrderDetails,
+  cancelOrder,
 };

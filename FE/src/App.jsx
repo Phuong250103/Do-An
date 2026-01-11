@@ -21,6 +21,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { use, useEffect } from "react";
 import { checkAuth } from "./store/auth-slice/index.js";
 import { Skeleton } from "./components/ui/skeleton.jsx";
+import DifyChatbot from "./components/shopping-view/DifyChatbot.jsx";
 
 function App() {
   const { user, isAuthenticated, isLoading } = useSelector(
@@ -82,6 +83,7 @@ function App() {
         <Route path="/unauth-page" element={<UnauthPage />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
+      <DifyChatbot />
     </div>
   );
 }

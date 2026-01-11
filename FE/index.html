@@ -9,7 +9,13 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
-    <script>
+    <!-- <script>
+      function getCurrentUser() {
+        const user = localStorage.getItem("current_user");
+        return user ? JSON.parse(user) : null;
+      }
+
+      const currentUser = getCurrentUser();
       window.difyChatbotConfig = {
         token: "Xb35ONF8M6y5AJeS",
         inputs: {
@@ -19,12 +25,10 @@
           // name: "NAME"
         },
         systemVariables: {
-          // user_id: 'YOU CAN DEFINE USER ID HERE',
-          // conversation_id: 'YOU CAN DEFINE CONVERSATION ID HERE, IT MUST BE A VALID UUID',
+          user_id: currentUser?.id,
         },
         userVariables: {
-          // avatar_url: 'YOU CAN DEFINE USER AVATAR URL HERE',
-          // name: 'YOU CAN DEFINE USER NAME HERE',
+          name: currentUser?.userName,
         },
       };
     </script>
@@ -41,6 +45,6 @@
         width: 24rem !important;
         height: 40rem !important;
       }
-    </style>
+    </style> -->
   </body>
 </html>
