@@ -27,7 +27,7 @@ const OrderSchema = new mongoose.Schema({
 
   orderStatus: {
     type: String,
-    default: "pending", // pending | confirmed | shipping | delivered | cancelled
+    default: "pending", // pending | confirmed | shipping | delivered | cancelled | refunded
   },
 
   paymentMethod: {
@@ -37,7 +37,7 @@ const OrderSchema = new mongoose.Schema({
 
   paymentStatus: {
     type: String,
-    default: "pending", // pending | paid | failed
+    default: "pending", // pending | paid | failed | refunded
   },
 
   totalAmount: Number,
@@ -49,6 +49,13 @@ const OrderSchema = new mongoose.Schema({
   transactionId: String, // mã giao dịch Momo trả về khi thanh toán thành công
   momoSignature: String, // chữ ký từ callback
   extraData: String, // dữ liệu đính kèm
+
+  // Refund fields
+  refundId: String, // refund ID từ MoMo
+  refundAmount: Number, // số tiền hoàn lại
+  refundReason: String, // lý do hoàn lại
+  refundDate: Date, // ngày hoàn lại
+  momoRefundResponse: Object, // response từ MoMo refund API
 
   // Nếu bạn cần kiểm tra lại response gốc từ Momo
   momoResponse: Object,

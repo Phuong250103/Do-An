@@ -103,52 +103,7 @@ const createOrder = async (req, res) => {
 
 const handleMomoCallback = async (req, res) => {
   try {
-    const {
-      orderId,
-      requestId,
-      amount,
-      resultCode,
-      message,
-      transId,
-      orderInfo,
-      extraData,
-      payType,
-      responseTime,
-      signature,
-    } = req.query;
-
-    // STEP 1: Verify signature
-    const rawSignature =
-      "accessKey=" +
-      "F8BBA842ECF85" +
-      "&amount=" +
-      amount +
-      "&extraData=" +
-      extraData +
-      "&message=" +
-      message +
-      "&orderId=" +
-      orderId +
-      "&orderInfo=" +
-      orderInfo +
-      "&orderType=momo" +
-      "&partnerCode=" +
-      "MOMO" +
-      "&payType=" +
-      payType +
-      "&requestId=" +
-      requestId +
-      "&responseTime=" +
-      responseTime +
-      "&resultCode=" +
-      resultCode +
-      "&transId=" +
-      transId;
-
-    const expectedSignature = crypto
-      .createHmac("sha256", "K951B6PE1waDMi640xX08PD3vg6EkVlz")
-      .update(rawSignature)
-      .digest("hex");
+    const { orderId, resultCode, transId } = req.query;
 
     // STEP 2: Find order
     const order = await Order.findOne({ momoOrderId: orderId });
@@ -285,6 +240,16 @@ const cancelOrder = async (req, res) => {
     await order.save();
 
     if (order.paymentStatus === "paid") {
+      // Process refund
+      const refundPayload = await processRefund(order);
+
+      if (!refundPayload.success) {
+        return res.status(400).json({
+          success: false,
+          message: "Failed to refund paid order: " + refundPayload.message,
+        });
+      }
+
       for (let item of order.cartItems) {
         let product = await Product.findById(item.productId);
 
@@ -311,6 +276,78 @@ const cancelOrder = async (req, res) => {
       success: false,
       message: "Server error",
     });
+  }
+};
+
+const processRefund = async (order) => {
+  try {
+    const partnerCode = "MOMO";
+    const accessKey = "F8BBA842ECF85";
+    const secretKey = "K951B6PE1waDMi640xX08PD3vg6EkVlz";
+
+    const refundOrderId = `REFUND_${Date.now()}`; //  ID HOÀN TIỀN
+    const requestId = Date.now().toString();
+    const description = "Order cancelled by user";
+
+    const rawSignature =
+      `accessKey=${accessKey}` +
+      `&amount=${order.totalAmount}` +
+      `&description=${description}` +
+      `&orderId=${refundOrderId}` +
+      `&partnerCode=${partnerCode}` +
+      `&requestId=${requestId}` +
+      `&transId=${order.transactionId}`;
+
+    const signature = crypto
+      .createHmac("sha256", secretKey)
+      .update(rawSignature)
+      .digest("hex");
+
+    const refundPayload = {
+      partnerCode,
+      accessKey,
+      requestId,
+      orderId: refundOrderId,
+      amount: order.totalAmount,
+      transId: order.transactionId,
+      lang: "vi",
+      description,
+      signature,
+    };
+
+    const momoRefundEndpoint =
+      "https://test-payment.momo.vn/v2/gateway/api/refund";
+
+    const refundResponse = await axios.post(momoRefundEndpoint, refundPayload, {
+      headers: { "Content-Type": "application/json" },
+    });
+
+    if (refundResponse.data.resultCode === 0) {
+      order.paymentStatus = "refunded";
+      order.refundOrderId = refundOrderId;
+      order.refundAmount = order.totalAmount;
+      order.refundReason = description;
+      order.refundDate = new Date();
+      order.momoRefundResponse = refundResponse.data;
+
+      await order.save();
+
+      return { success: true, message: "Refund processed successfully" };
+    }
+
+    order.momoRefundResponse = refundResponse.data;
+    await order.save();
+
+    return {
+      success: false,
+      message: refundResponse.data.message || "Refund failed",
+    };
+  } catch (e) {
+    console.error("PROCESS REFUND ERROR:", e.response?.data || e);
+    return {
+      success: false,
+      message: "Error processing refund: " + e.message,
+    };
   }
 };
 

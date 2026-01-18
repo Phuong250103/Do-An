@@ -29,18 +29,23 @@ function AdminOrderDetailsView({ orderDetails }) {
     event.preventDefault();
     const { status } = formData;
 
-    dispatch(
-      updateOrderStatus({ id: orderDetails?._id, orderStatus: status })
-    ).then((data) => {
-      if (data?.payload?.success) {
+    dispatch(updateOrderStatus({ id: orderDetails?._id, orderStatus: status }))
+      .unwrap()
+      .then((res) => {
         dispatch(getOrderDetailsForAdmin(orderDetails?._id));
         dispatch(getAllOrdersForAdmin());
         setFormData(initialFormData);
+
         toast({
-          title: data?.payload?.message,
+          title: res.message,
         });
-      }
-    });
+      })
+      .catch((err) => {
+        toast({
+          title: err.message,
+          variant: "destructive",
+        });
+      });
   }
 
   useEffect(() => {
@@ -143,7 +148,7 @@ function AdminOrderDetailsView({ orderDetails }) {
                   { id: "inProcess", label: "In Process" },
                   { id: "inShipping", label: "In Shipping" },
                   { id: "delivered", label: "Delivered" },
-                  { id: "rejected", label: "Rejected" },
+                  { id: "cancelled", label: "Cancelled" },
                 ],
               },
             ]}

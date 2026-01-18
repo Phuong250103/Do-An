@@ -419,16 +419,29 @@ function AdminDashboard() {
 
                     <span
                       className={`text-xs px-2 py-1 rounded-full ${
-                        order.orderStatus === "confirmed" ||
-                        order.orderStatus === "delivered"
-                          ? "bg-green-100 text-green-700"
-                          : "bg-yellow-100 text-yellow-700"
+                        order.orderStatus === "cancelled"
+                          ? "bg-red-500 text-white"
+                          : order.orderStatus === "delivered"
+                          ? "bg-green-600 text-white"
+                          : order.orderStatus === "inShipping"
+                          ? "bg-yellow-500 text-white"
+                          : order.orderStatus === "inProcess"
+                          ? "bg-yellow-500 text-white"
+                          : order.orderStatus === "confirmed"
+                          ? "bg-green-500 text-white"
+                          : "bg-yellow-500 text-white"
                       }`}
                     >
-                      {order.orderStatus === "confirmed"
-                        ? "Confirmed"
+                      {order.orderStatus === "cancelled"
+                        ? "Cancelled"
                         : order.orderStatus === "delivered"
                         ? "Delivered"
+                        : order.orderStatus === "inShipping"
+                        ? "Shipping"
+                        : order.orderStatus === "inProcess"
+                        ? "Processing"
+                        : order.orderStatus === "confirmed"
+                        ? "Confirmed"
                         : "Pending"}
                     </span>
                   </div>
