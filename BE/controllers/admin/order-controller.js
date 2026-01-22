@@ -70,8 +70,15 @@ const updateOrderStatus = async (req, res) => {
       });
     }
 
+    if (orderStatus === "cancelled" && order.orderStatus !== "confirmed") {
+      return res.status(400).json({
+        success: false,
+        message: "Only confirmed orders can be cancelled",
+      });
+    }
+
     if (orderStatus === "cancelled") {
-      if (order.paymentStatus === "paid") {
+      if (order.paymentStatus === "paid" && order.orderStatus === "confirmed") {
         const refundResult = await processRefund(order);
 
         if (!refundResult.success) {

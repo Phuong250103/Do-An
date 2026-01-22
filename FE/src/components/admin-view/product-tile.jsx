@@ -9,6 +9,7 @@ function AdminProductTile({
   handleDelete,
   setVariants,
   setColorImages,
+  setUploadedImageUrl,
 }) {
   return (
     <Card className="w-full max-w-sm mx-auto">
@@ -44,6 +45,7 @@ function AdminProductTile({
               setCurrentEditedId(product?._id);
               const { size, color, totalStock, ...productData } = product;
               setFormData(productData);
+              setUploadedImageUrl(product?.image || "");
               // Load variants nếu có
               if (product?.variants && product.variants.length > 0) {
                 setVariants(product.variants);
@@ -51,9 +53,10 @@ function AdminProductTile({
                 setVariants([]);
               }
               if (product?.colorImages) {
-                const colorImagesObj = product.colorImages instanceof Map
-                  ? Object.fromEntries(product.colorImages)
-                  : product.colorImages;
+                const colorImagesObj =
+                  product.colorImages instanceof Map
+                    ? Object.fromEntries(product.colorImages)
+                    : product.colorImages;
                 setColorImages(colorImagesObj || {});
               } else {
                 setColorImages({});

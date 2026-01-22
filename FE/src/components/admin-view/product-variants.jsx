@@ -12,7 +12,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import ColorImageUpload from "./color-image-upload";
 
-function ProductVariants({ variants, setVariants, sizes, colors, colorImages, setColorImages }) {
+function ProductVariants({
+  variants,
+  setVariants,
+  sizes,
+  colors,
+  colorImages,
+  setColorImages,
+}) {
   const [localVariants, setLocalVariants] = useState(
     variants && variants.length > 0
       ? variants.map((v) => ({
@@ -157,7 +164,9 @@ function ProductVariants({ variants, setVariants, sizes, colors, colorImages, se
                     colorName={colorName}
                     colorCode={getColorCode(colorName)}
                     uploadedImageUrl={colorImages?.[colorName] || ""}
-                    onImageUrlChange={(url) => handleColorImageChange(colorName, url)}
+                    onImageUrlChange={(url) =>
+                      handleColorImageChange(colorName, url)
+                    }
                   />
                 </div>
               );

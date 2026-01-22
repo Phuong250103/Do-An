@@ -205,7 +205,7 @@ const calculateSeasonalPrice = (product) => {
 
 const fetchAllProducts = async (req, res) => {
   try {
-    const listOfProducts = await Product.find({});
+    const listOfProducts = await Product.find({}).lean();
     // Tính toán giá động cho từng sản phẩm
     const productsWithCalculatedPrice = listOfProducts.map((product) =>
       calculateSeasonalPrice(product)

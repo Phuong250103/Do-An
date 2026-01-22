@@ -239,7 +239,7 @@ const cancelOrder = async (req, res) => {
     order.orderUpdateDate = new Date();
     await order.save();
 
-    if (order.paymentStatus === "paid") {
+    if (order.paymentStatus === "paid" && order.orderStatus === "confirmed") {
       // Process refund
       const refundPayload = await processRefund(order);
 

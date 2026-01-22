@@ -18,8 +18,6 @@ function ProductImageUpload({
 }) {
   const inputRef = useRef(null);
 
-  console.log(isEditMode, "isEditMode");
-
   function handleImageFileChange(event) {
     console.log(event.target.files, "event.target.files");
     const selectedFile = event.target.files?.[0];
@@ -40,6 +38,7 @@ function ProductImageUpload({
 
   function handleRemoveImage() {
     setImageFile(null);
+    setUploadedImageUrl("");
     if (inputRef.current) {
       inputRef.current.value = "";
     }
@@ -83,9 +82,28 @@ function ProductImageUpload({
           className="hidden"
           ref={inputRef}
           onChange={handleImageFileChange}
-          disabled={isEditMode}
         />
-        {!imageFile ? (
+        {imageLoadingState ? (
+          <Skeleton className="h-10 bg-gray-100" />
+        ) : uploadedImageUrl ? (
+          <div className="w-full">
+            <div className="relative w-full h-40 rounded overflow-hidden border bg-gray-50">
+              <img
+                src={uploadedImageUrl}
+                alt="Uploaded product"
+                className="w-full h-full object-cover"
+              />
+              <Button
+                variant="ghost"
+                size="icon"
+                className="absolute top-1 right-1 h-7 w-7 bg-white rounded-full shadow-md text-red-500 hover:text-red-700 hover:bg-red-50"
+                onClick={handleRemoveImage}
+              >
+                <XIcon className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        ) : !imageFile ? (
           <Label
             htmlFor="image-upload"
             className={`${
@@ -95,8 +113,6 @@ function ProductImageUpload({
             <UploadCloudIcon className="w-10 h-10 text-muted-foreground mb-2" />
             <span>Drag & drop or click to upload image</span>
           </Label>
-        ) : imageLoadingState ? (
-          <Skeleton className="h-10 bg-gray-100" />
         ) : (
           <div className="flex items-center justify-between">
             <div className="flex items-center">

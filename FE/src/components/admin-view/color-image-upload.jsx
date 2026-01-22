@@ -42,11 +42,11 @@ function ColorImageUpload({
 
   async function uploadImageToCloudinary() {
     if (!imageFile) return;
-    
+
     setImageLoadingState(true);
     const data = new FormData();
     data.append("my_file", imageFile);
-    
+
     try {
       const response = await axios.post(
         "http://localhost:5000/api/admin/products/upload-image",
@@ -91,7 +91,7 @@ function ColorImageUpload({
           onChange={handleImageFileChange}
           disabled={isEditMode && !uploadedImageUrl}
         />
-        
+
         {uploadedImageUrl ? (
           <div className="relative w-full">
             <div className="relative w-full h-20 rounded overflow-hidden border">
@@ -130,4 +130,3 @@ function ColorImageUpload({
 }
 
 export default ColorImageUpload;
-

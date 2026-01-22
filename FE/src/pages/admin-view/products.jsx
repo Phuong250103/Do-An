@@ -129,15 +129,24 @@ function AdminProducts() {
 
   function isFormValid() {
     // Kiểm tra các trường bắt buộc
-    const requiredFields = ["title", "description", "category", "brand", "price", "season"];
+    const requiredFields = [
+      "title",
+      "description",
+      "category",
+      "brand",
+      "price",
+      "season",
+    ];
     const isFormFieldsValid = requiredFields
       .map((key) => formData[key] !== "")
       .every((item) => item);
-    
+
     // Kiểm tra variants phải có ít nhất 1 biến thể hợp lệ
-    const hasValidVariants = variants && variants.length > 0 && 
-      variants.some(v => v.color && v.size && v.quantity > 0);
-    
+    const hasValidVariants =
+      variants &&
+      variants.length > 0 &&
+      variants.some((v) => v.color && v.size && v.quantity > 0);
+
     return isFormFieldsValid && hasValidVariants;
   }
 
@@ -153,7 +162,13 @@ function AdminProducts() {
   // Tách form elements thành 2 phần: trước Price và từ Price trở đi
   const formElementsBeforePrice = useMemo(() => {
     return addProductFormElements
-      .filter((element) => element.name !== "price" && element.name !== "salePrice" && element.name !== "season" && element.name !== "discountAfterSeason")
+      .filter(
+        (element) =>
+          element.name !== "price" &&
+          element.name !== "salePrice" &&
+          element.name !== "season" &&
+          element.name !== "discountAfterSeason"
+      )
       .map((element) => {
         if (element.name === "category" && categories.length > 0) {
           return {
@@ -179,7 +194,13 @@ function AdminProducts() {
 
   const formElementsFromPrice = useMemo(() => {
     return addProductFormElements
-      .filter((element) => element.name === "price" || element.name === "salePrice" || element.name === "season" || element.name === "discountAfterSeason")
+      .filter(
+        (element) =>
+          element.name === "price" ||
+          element.name === "salePrice" ||
+          element.name === "season" ||
+          element.name === "discountAfterSeason"
+      )
       .map((element) => {
         if (element.name === "category" && categories.length > 0) {
           return {
@@ -213,7 +234,16 @@ function AdminProducts() {
   return (
     <Fragment>
       <div className="mb-5 flex justify-end">
-        <Button onClick={() => setOpenCreateProductsDialog(true)}>
+        <Button
+          onClick={() => {
+            setOpenCreateProductsDialog(true);
+            setFormData(initialFormData);
+            setUploadedImageUrl("");
+            setImageFile(null);
+            setVariants([]);
+            setColorImages({});
+          }}
+        >
           Add New Product
         </Button>
       </div>
@@ -229,6 +259,7 @@ function AdminProducts() {
                 handleDelete={handleDelete}
                 setVariants={setVariants}
                 setColorImages={setColorImages}
+                setUploadedImageUrl={setUploadedImageUrl}
               />
             ))
           : null}
@@ -256,7 +287,9 @@ function AdminProducts() {
           </div>
           <Button
             variant="outline"
-            onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+            onClick={() =>
+              setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+            }
             disabled={currentPage === totalPages}
           >
             Next
@@ -328,9 +361,13 @@ function AdminProducts() {
                             <SelectValue placeholder={controlItem.label} />
                           </SelectTrigger>
                           <SelectContent>
-                            {controlItem.options && controlItem.options.length > 0
+                            {controlItem.options &&
+                            controlItem.options.length > 0
                               ? controlItem.options.map((optionItem) => (
-                                  <SelectItem key={optionItem.id} value={optionItem.id}>
+                                  <SelectItem
+                                    key={optionItem.id}
+                                    value={optionItem.id}
+                                  >
                                     {optionItem.label}
                                   </SelectItem>
                                 ))
@@ -432,9 +469,13 @@ function AdminProducts() {
                             <SelectValue placeholder={controlItem.label} />
                           </SelectTrigger>
                           <SelectContent>
-                            {controlItem.options && controlItem.options.length > 0
+                            {controlItem.options &&
+                            controlItem.options.length > 0
                               ? controlItem.options.map((optionItem) => (
-                                  <SelectItem key={optionItem.id} value={optionItem.id}>
+                                  <SelectItem
+                                    key={optionItem.id}
+                                    value={optionItem.id}
+                                  >
                                     {optionItem.label}
                                   </SelectItem>
                                 ))
@@ -486,7 +527,11 @@ function AdminProducts() {
                 })}
               </div>
 
-              <Button disabled={!isFormValid()} type="submit" className="mt-6 w-full">
+              <Button
+                disabled={!isFormValid()}
+                type="submit"
+                className="mt-6 w-full"
+              >
                 {currentEditedId !== null ? "Edit" : "Add"}
               </Button>
             </form>
