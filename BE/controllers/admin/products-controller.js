@@ -35,7 +35,7 @@ const addProduct = async (req, res) => {
       averageReview,
       season,
       discountAfterSeason,
-      variants, // Mảng các biến thể: [{color, size, quantity}, ...]
+      variants,
     } = req.body;
 
     const now = new Date();
@@ -50,7 +50,7 @@ const addProduct = async (req, res) => {
         seasonEndDate = new Date(year, 7, 31); // 31/08
         break;
       case "autumn":
-        seasonEndDate = new Date(year, 10, 30); // 30/11
+        seasonEndDate = new Date(2025, 10, 30); // 30/11
         break;
       case "winter":
         seasonEndDate = new Date(year + 1, 1, 28);
@@ -59,38 +59,13 @@ const addProduct = async (req, res) => {
         seasonEndDate = null;
     }
 
-    // Kiểm tra nếu mùa đã kết thúc ngay khi thêm
-    // Phải qua ngày endseason mới áp dụng giảm giá (không áp dụng trong ngày endseason)
-    let finalSalePrice = 0; // mặc định không giảm
+    let finalSalePrice = 0;
     let isSeasonalDiscountApplied = false;
+    let finalSaleSource = "none";
 
-    if (seasonEndDate) {
-      // So sánh ngày (không tính giờ phút giây) để chính xác
-      const todayDate = new Date(
-        now.getFullYear(),
-        now.getMonth(),
-        now.getDate()
-      );
-      const seasonEndDateOnly = new Date(
-        seasonEndDate.getFullYear(),
-        seasonEndDate.getMonth(),
-        seasonEndDate.getDate()
-      );
-
-      // Chỉ áp dụng giảm giá khi ngày hiện tại > ngày kết thúc mùa (phải qua ngày endseason)
-      if (todayDate > seasonEndDateOnly) {
-        // mùa đã hết → áp dụng giảm giá
-        finalSalePrice = Math.round(
-          price * (1 - (discountAfterSeason || 70) / 100)
-        );
-        isSeasonalDiscountApplied = true;
-      } else {
-        // mùa chưa hết hoặc đang trong ngày kết thúc → giữ salePrice admin nhập nếu có
-        finalSalePrice = salePrice || 0;
-      }
-    } else {
-      // Không có seasonEndDate → giữ salePrice admin nhập nếu có
-      finalSalePrice = salePrice || 0;
+    if (salePrice && salePrice > 0) {
+      finalSalePrice = Number(salePrice);
+      finalSaleSource = "manual";
     }
 
     // Validate variants
@@ -111,11 +86,12 @@ const addProduct = async (req, res) => {
       brand,
       variants: variants,
       price,
-      salePrice: finalSalePrice, // Lưu giá đã tính toán
+      salePrice: finalSalePrice,
+      saleSource: finalSaleSource,
       averageReview,
       season,
       seasonEndDate,
-      discountAfterSeason: discountAfterSeason || 70,
+      discountAfterSeason: discountAfterSeason,
       isSeasonalDiscountApplied,
     });
 
@@ -133,70 +109,8 @@ const addProduct = async (req, res) => {
   }
 };
 
-// Helper function để tính giá dựa trên thời gian hiện tại
 const calculateSeasonalPrice = (product) => {
-  const now = new Date();
   const productData = product.toObject ? product.toObject() : product;
-
-  if (productData.seasonEndDate) {
-    // So sánh ngày (không tính giờ phút giây) để chính xác
-    const todayDate = new Date(
-      now.getFullYear(),
-      now.getMonth(),
-      now.getDate()
-    );
-    const seasonEndDateOnly = new Date(
-      new Date(productData.seasonEndDate).getFullYear(),
-      new Date(productData.seasonEndDate).getMonth(),
-      new Date(productData.seasonEndDate).getDate()
-    );
-
-    // Nếu mùa đã hết (phải qua ngày endseason) và chưa áp dụng giảm giá
-    if (
-      todayDate > seasonEndDateOnly &&
-      !productData.isSeasonalDiscountApplied
-    ) {
-      const discountPercent = productData.discountAfterSeason || 70;
-      const calculatedSalePrice = Math.round(
-        productData.price * (1 - discountPercent / 100)
-      );
-
-      // Cập nhật trong database (async, không cần đợi)
-      Product.findByIdAndUpdate(productData._id, {
-        salePrice: calculatedSalePrice,
-        isSeasonalDiscountApplied: true,
-      }).catch((err) => console.log("Error updating price:", err));
-
-      return {
-        ...productData,
-        salePrice: calculatedSalePrice,
-        isSeasonalDiscountApplied: true,
-      };
-    }
-
-    // Nếu mùa đã hết (phải qua ngày endseason) và đã áp dụng giảm giá, đảm bảo giá đúng
-    if (
-      todayDate > seasonEndDateOnly &&
-      productData.isSeasonalDiscountApplied
-    ) {
-      const discountPercent = productData.discountAfterSeason || 70;
-      const expectedSalePrice = Math.round(
-        productData.price * (1 - discountPercent / 100)
-      );
-
-      // Nếu giá hiện tại không đúng, cập nhật lại
-      if (productData.salePrice !== expectedSalePrice) {
-        Product.findByIdAndUpdate(productData._id, {
-          salePrice: expectedSalePrice,
-        }).catch((err) => console.log("Error updating price:", err));
-
-        return {
-          ...productData,
-          salePrice: expectedSalePrice,
-        };
-      }
-    }
-  }
 
   return productData;
 };
@@ -206,7 +120,6 @@ const calculateSeasonalPrice = (product) => {
 const fetchAllProducts = async (req, res) => {
   try {
     const listOfProducts = await Product.find({}).lean();
-    // Tính toán giá động cho từng sản phẩm
     const productsWithCalculatedPrice = listOfProducts.map((product) =>
       calculateSeasonalPrice(product)
     );
@@ -239,10 +152,20 @@ const editProduct = async (req, res) => {
       averageReview,
       season,
       discountAfterSeason,
-      variants, // Mảng các biến thể: [{color, size, quantity}, ...]
+      variants,
     } = req.body;
 
     let findProduct = await Product.findById(id);
+    const incomingSalePrice =
+      salePrice === "" || salePrice === undefined ? null : Number(salePrice);
+
+    const currentSalePrice =
+      findProduct.salePrice === null || findProduct.salePrice === undefined
+        ? null
+        : Number(findProduct.salePrice);
+
+    const isSalePriceChanged = incomingSalePrice !== currentSalePrice;
+
     if (!findProduct)
       return res.status(404).json({
         success: false,
@@ -263,7 +186,7 @@ const editProduct = async (req, res) => {
           seasonEndDate = new Date(year, 7, 31); // 31/08
           break;
         case "autumn":
-          seasonEndDate = new Date(year, 10, 30); // 30/11
+          seasonEndDate = new Date(2025, 10, 30); // 30/11
           break;
         case "winter":
           seasonEndDate = new Date(year + 1, 1, 28);
@@ -283,6 +206,18 @@ const editProduct = async (req, res) => {
     findProduct.brand = brand || findProduct.brand;
     findProduct.price = price === "" ? 0 : price || findProduct.price;
     findProduct.image = image || findProduct.image;
+    if (isSalePriceChanged) {
+      if (incomingSalePrice !== null && incomingSalePrice > 0) {
+        findProduct.salePrice = incomingSalePrice;
+        findProduct.saleSource = "manual";
+        findProduct.isSeasonalDiscountApplied = false;
+      } else {
+        findProduct.salePrice = null;
+        findProduct.saleSource = "none";
+        findProduct.isSeasonalDiscountApplied = false;
+      }
+    }
+
     if (colorImages !== undefined) {
       findProduct.colorImages = colorImages;
     }
@@ -292,7 +227,6 @@ const editProduct = async (req, res) => {
     if (variants && Array.isArray(variants) && variants.length > 0) {
       findProduct.variants = variants;
     } else if (variants !== undefined) {
-      // Nếu variants là mảng rỗng, không cho phép
       return res.status(400).json({
         success: false,
         message:
@@ -303,47 +237,8 @@ const editProduct = async (req, res) => {
       findProduct.discountAfterSeason = discountAfterSeason;
     }
 
-    const now = new Date();
-    if (findProduct.seasonEndDate) {
-      const todayDate = new Date(
-        now.getFullYear(),
-        now.getMonth(),
-        now.getDate()
-      );
-      const seasonEndDateOnly = new Date(
-        new Date(findProduct.seasonEndDate).getFullYear(),
-        new Date(findProduct.seasonEndDate).getMonth(),
-        new Date(findProduct.seasonEndDate).getDate()
-      );
-
-      // Chỉ áp dụng giảm giá khi ngày hiện tại > ngày kết thúc mùa (phải qua ngày endseason)
-      if (
-        todayDate > seasonEndDateOnly &&
-        !findProduct.isSeasonalDiscountApplied
-      ) {
-        // Mùa đã hết → áp dụng giảm giá
-        const discountPercent = findProduct.discountAfterSeason || 70;
-        findProduct.salePrice = Math.round(
-          findProduct.price * (1 - discountPercent / 100)
-        );
-        findProduct.isSeasonalDiscountApplied = true;
-      } else if (todayDate <= seasonEndDateOnly) {
-        // Mùa chưa hết hoặc đang trong ngày kết thúc → giữ salePrice admin nhập nếu có
-        findProduct.salePrice =
-          salePrice === "" ? 0 : salePrice || findProduct.salePrice;
-        findProduct.isSeasonalDiscountApplied = false;
-      } else if (salePrice !== undefined) {
-        // Nếu admin chỉnh sửa salePrice trực tiếp
-        findProduct.salePrice = salePrice === "" ? 0 : salePrice;
-      }
-    } else if (salePrice !== undefined) {
-      // Nếu không có seasonEndDate nhưng admin chỉnh sửa salePrice trực tiếp
-      findProduct.salePrice = salePrice === "" ? 0 : salePrice;
-    }
-
     await findProduct.save();
 
-    // Tính toán giá cuối cùng trước khi trả về
     const finalProduct = calculateSeasonalPrice(findProduct);
 
     res.status(200).json({

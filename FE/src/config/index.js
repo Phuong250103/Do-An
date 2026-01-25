@@ -108,7 +108,7 @@ export const addProductFormElements = [
     name: "discountAfterSeason",
     componentType: "input",
     type: "number",
-    placeholder: "Enter discount percentage (default: 70)",
+    placeholder: "Enter discount percentage ",
   },
 ];
 export const shoppingViewHeaderMenuItems = [

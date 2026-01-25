@@ -45,9 +45,8 @@ app.use(
   })
 );
 // Khởi động cron job ở đây
-cron.schedule("0 0 * * *", async () => {
+cron.schedule("* * * * *", async () => {
   const today = new Date();
-  // So sánh ngày (không tính giờ phút giây) để chính xác
   const todayDate = new Date(
     today.getFullYear(),
     today.getMonth(),
@@ -55,78 +54,48 @@ cron.schedule("0 0 * * *", async () => {
   );
 
   try {
-    // Tìm tất cả sản phẩm có mùa đã hết (phải qua ngày endseason)
-    const allProducts = await Product.find({
+    const products = await Product.find({
       seasonEndDate: { $exists: true },
-      isSeasonalDiscountApplied: false,
+      saleSource: { $ne: "manual" }, //not equal
     });
 
-    // Áp dụng giảm giá cho các sản phẩm mùa đã hết (phải qua ngày endseason) nhưng chưa được áp dụng
-    for (const p of allProducts) {
-      if (p.seasonEndDate && p.discountAfterSeason > 0) {
-        const seasonEndDateOnly = new Date(
-          new Date(p.seasonEndDate).getFullYear(),
-          new Date(p.seasonEndDate).getMonth(),
-          new Date(p.seasonEndDate).getDate()
+    for (const p of products) {
+      const seasonEndDateOnly = new Date(
+        new Date(p.seasonEndDate).getFullYear(),
+        new Date(p.seasonEndDate).getMonth(),
+        new Date(p.seasonEndDate).getDate()
+      );
+
+      if (
+        todayDate > seasonEndDateOnly &&
+        (!p.isSeasonalDiscountApplied || p.saleSource === "seasonal")
+      ) {
+        const expectedSalePrice = Math.round(
+          p.price * (1 - p.discountAfterSeason / 100)
         );
 
-        // Chỉ áp dụng khi đã qua ngày endseason (không áp dụng trong ngày endseason)
-        if (todayDate > seasonEndDateOnly) {
-          const calculatedSalePrice = Math.round(
-            p.price * (1 - p.discountAfterSeason / 100)
-          );
-          p.salePrice = calculatedSalePrice;
-          p.isSeasonalDiscountApplied = true;
-          await p.save();
-        }
+        p.salePrice = expectedSalePrice;
+        p.saleSource = "seasonal";
+        p.isSeasonalDiscountApplied = true;
+
+        await p.save();
       }
     }
 
-    // Tìm các sản phẩm có mùa chưa hết nhưng đang có isSeasonalDiscountApplied = true
-    // (có thể do admin vừa chỉnh sửa chuyển từ mùa cũ sang mùa mới)
-    const productsWithActiveSeason = await Product.find({
+    const productsReset = await Product.find({
       seasonEndDate: { $gt: today },
+      saleSource: "seasonal",
       isSeasonalDiscountApplied: true,
     });
 
-    for (const p of productsWithActiveSeason) {
-      // Khi chuyển sang mùa mới chưa hết, chỉ cần reset flag
-      // Giữ nguyên salePrice vì có thể là giá admin đã set hoặc muốn giữ
-      // Mùa mới chưa hết nên không áp dụng giảm giá tự động, nhưng salePrice vẫn có thể được dùng
+    for (const p of productsReset) {
       p.isSeasonalDiscountApplied = false;
+      p.saleSource = "none";
+      p.salePrice = 0;
       await p.save();
     }
-
-    // Đảm bảo giá đúng cho các sản phẩm mùa đã hết (phải qua ngày endseason)
-    // (kiểm tra lại các sản phẩm đã có isSeasonalDiscountApplied = true nhưng giá có thể không đúng)
-    const productsWithExpiredSeasonButWrongPrice = await Product.find({
-      seasonEndDate: { $exists: true },
-      isSeasonalDiscountApplied: true,
-    });
-
-    for (const p of productsWithExpiredSeasonButWrongPrice) {
-      if (p.seasonEndDate) {
-        const seasonEndDateOnly = new Date(
-          new Date(p.seasonEndDate).getFullYear(),
-          new Date(p.seasonEndDate).getMonth(),
-          new Date(p.seasonEndDate).getDate()
-        );
-
-        if (todayDate > seasonEndDateOnly) {
-          const expectedSalePrice = Math.round(
-            p.price * (1 - p.discountAfterSeason / 100)
-          );
-
-          // Nếu giá hiện tại không đúng với giá nên có, cập nhật lại
-          if (p.salePrice !== expectedSalePrice) {
-            p.salePrice = expectedSalePrice;
-            await p.save();
-          }
-        }
-      }
-    }
   } catch (error) {
-    console.error("❌ Lỗi trong cron job:", error);
+    console.error("❌ Lỗi cron seasonal:", error);
   }
 });
 

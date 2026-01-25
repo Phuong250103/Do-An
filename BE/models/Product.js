@@ -30,13 +30,21 @@ const ProductSchema = new mongoose.Schema(
     seasonEndDate: { type: Date },
     discountAfterSeason: { type: Number, default: 70 },
     isSeasonalDiscountApplied: { type: Boolean, default: false },
+    saleSource: {
+      type: String,
+      enum: ["manual", "seasonal", "none"],
+      default: "none",
+    },
   },
   { timestamps: true }
 );
 
 ProductSchema.virtual("totalStock").get(function () {
   if (this.variants && this.variants.length > 0) {
-    return this.variants.reduce((sum, variant) => sum + (variant.quantity || 0), 0);
+    return this.variants.reduce(
+      (sum, variant) => sum + (variant.quantity || 0),
+      0
+    );
   }
   return 0;
 });
