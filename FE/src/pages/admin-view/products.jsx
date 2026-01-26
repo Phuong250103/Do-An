@@ -67,51 +67,48 @@ function AdminProducts() {
   const endIndex = startIndex + itemsPerPage;
   const currentProducts = productList?.slice(startIndex, endIndex) || [];
 
-  function onSubmit(event) {
+  async function onSubmit(event) {
     event.preventDefault();
 
-    currentEditedId !== null
-      ? dispatch(
+    try {
+      if (currentEditedId !== null) {
+        await dispatch(
           editProduct({
             id: currentEditedId,
             formData: {
               ...formData,
-              variants: variants,
-              colorImages: colorImages,
+              variants,
+              colorImages,
             },
           })
-        ).then((data) => {
-          console.log(data, "edit");
+        ).unwrap();
 
-          if (data?.payload?.success) {
-            dispatch(fetchAllProducts());
-            setFormData(initialFormData);
-            setVariants([]);
-            setColorImages({});
-            setOpenCreateProductsDialog(false);
-            setCurrentEditedId(null);
-          }
-        })
-      : dispatch(
+        toast({ title: "Product updated successfully" });
+      } else {
+        await dispatch(
           addNewProduct({
             ...formData,
             image: uploadedImageUrl,
-            variants: variants,
-            colorImages: colorImages,
+            variants,
+            colorImages,
           })
-        ).then((data) => {
-          if (data?.payload?.success) {
-            dispatch(fetchAllProducts());
-            setOpenCreateProductsDialog(false);
-            setImageFile(null);
-            setFormData(initialFormData);
-            setVariants([]);
-            setColorImages({});
-            toast({
-              title: "Product add successfully",
-            });
-          }
-        });
+        ).unwrap();
+
+        toast({ title: "Product added successfully" });
+      }
+      dispatch(fetchAllProducts());
+      setOpenCreateProductsDialog(false);
+      setFormData(initialFormData);
+      setVariants([]);
+      setColorImages({});
+      setCurrentEditedId(null);
+      setImageFile(null);
+    } catch (error) {
+      toast({
+        description: error?.message || "Something went wrong",
+        variant: "destructive",
+      });
+    }
   }
 
   function handleDelete(getCurrentProductId) {

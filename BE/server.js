@@ -56,7 +56,7 @@ cron.schedule("* * * * *", async () => {
   try {
     const products = await Product.find({
       seasonEndDate: { $exists: true },
-      saleSource: { $ne: "manual" }, //not equal
+      discountAfterSeason: { $gt: 0 }, //greater than 0
     });
 
     for (const p of products) {
@@ -66,31 +66,52 @@ cron.schedule("* * * * *", async () => {
         new Date(p.seasonEndDate).getDate()
       );
 
-      if (
-        todayDate > seasonEndDateOnly &&
-        (!p.isSeasonalDiscountApplied || p.saleSource === "seasonal")
-      ) {
+      if (todayDate > seasonEndDateOnly && !p.isSeasonalDiscountApplied) {
         const expectedSalePrice = Math.round(
           p.price * (1 - p.discountAfterSeason / 100)
         );
 
         p.salePrice = expectedSalePrice;
-        p.saleSource = "seasonal";
         p.isSeasonalDiscountApplied = true;
 
         await p.save();
+      }
+      const productsWithExpiredSeasonButWrongPrice = await Product.find({
+        seasonEndDate: { $exists: true },
+        isSeasonalDiscountApplied: true,
+        discountAfterSeason: { $gt: 0 },
+      });
+
+      for (const p of productsWithExpiredSeasonButWrongPrice) {
+        if (p.seasonEndDate) {
+          const seasonEndDateOnly = new Date(
+            new Date(p.seasonEndDate).getFullYear(),
+            new Date(p.seasonEndDate).getMonth(),
+            new Date(p.seasonEndDate).getDate()
+          );
+
+          if (todayDate > seasonEndDateOnly) {
+            const expectedSalePrice = Math.round(
+              p.price * (1 - p.discountAfterSeason / 100)
+            );
+
+            if (p.salePrice !== expectedSalePrice) {
+              p.salePrice = expectedSalePrice;
+              await p.save();
+            }
+          }
+        }
       }
     }
 
     const productsReset = await Product.find({
       seasonEndDate: { $gt: today },
-      saleSource: "seasonal",
       isSeasonalDiscountApplied: true,
+      discountAfterSeason: { $gt: 0 },
     });
 
     for (const p of productsReset) {
       p.isSeasonalDiscountApplied = false;
-      p.saleSource = "none";
       p.salePrice = 0;
       await p.save();
     }

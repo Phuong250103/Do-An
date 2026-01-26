@@ -59,13 +59,14 @@ const addProduct = async (req, res) => {
         seasonEndDate = null;
     }
 
-    let finalSalePrice = 0;
     let isSeasonalDiscountApplied = false;
-    let finalSaleSource = "none";
 
-    if (salePrice && salePrice > 0) {
-      finalSalePrice = Number(salePrice);
-      finalSaleSource = "manual";
+    if (discountAfterSeason > 90 || discountAfterSeason < 0) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Discounts after the peak season must not be less than 0% and not exceed 90%.",
+      });
     }
 
     // Validate variants
@@ -86,8 +87,7 @@ const addProduct = async (req, res) => {
       brand,
       variants: variants,
       price,
-      salePrice: finalSalePrice,
-      saleSource: finalSaleSource,
+      salePrice: salePrice,
       averageReview,
       season,
       seasonEndDate,
@@ -156,15 +156,6 @@ const editProduct = async (req, res) => {
     } = req.body;
 
     let findProduct = await Product.findById(id);
-    const incomingSalePrice =
-      salePrice === "" || salePrice === undefined ? null : Number(salePrice);
-
-    const currentSalePrice =
-      findProduct.salePrice === null || findProduct.salePrice === undefined
-        ? null
-        : Number(findProduct.salePrice);
-
-    const isSalePriceChanged = incomingSalePrice !== currentSalePrice;
 
     if (!findProduct)
       return res.status(404).json({
@@ -206,22 +197,21 @@ const editProduct = async (req, res) => {
     findProduct.brand = brand || findProduct.brand;
     findProduct.price = price === "" ? 0 : price || findProduct.price;
     findProduct.image = image || findProduct.image;
-    if (isSalePriceChanged) {
-      if (incomingSalePrice !== null && incomingSalePrice > 0) {
-        findProduct.salePrice = incomingSalePrice;
-        findProduct.saleSource = "manual";
-        findProduct.isSeasonalDiscountApplied = false;
-      } else {
-        findProduct.salePrice = null;
-        findProduct.saleSource = "none";
-        findProduct.isSeasonalDiscountApplied = false;
-      }
-    }
+    findProduct.salePrice =
+      salePrice === "" ? 0 : salePrice || findProduct.salePrice;
 
     if (colorImages !== undefined) {
       findProduct.colorImages = colorImages;
     }
     findProduct.averageReview = averageReview || findProduct.averageReview;
+
+    if (discountAfterSeason > 90 || discountAfterSeason < 0) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Discounts after the peak season must not be less than 0% and not exceed 90%.",
+      });
+    }
 
     // Cập nhật variants
     if (variants && Array.isArray(variants) && variants.length > 0) {

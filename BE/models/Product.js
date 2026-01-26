@@ -28,13 +28,8 @@ const ProductSchema = new mongoose.Schema(
       required: true,
     },
     seasonEndDate: { type: Date },
-    discountAfterSeason: { type: Number, default: 70 },
+    discountAfterSeason: { type: Number, min: 0, max: 90, default: 0 },
     isSeasonalDiscountApplied: { type: Boolean, default: false },
-    saleSource: {
-      type: String,
-      enum: ["manual", "seasonal", "none"],
-      default: "none",
-    },
   },
   { timestamps: true }
 );
